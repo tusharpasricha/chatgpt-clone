@@ -24,13 +24,78 @@ export async function POST(req: NextRequest) {
       return new Response('Invalid messages format', { status: 400 });
     }
 
+    // Convert messages to OpenAI SDK format with vision support
+    const openaiMessages = messages.map((msg: {
+      role: 'user' | 'assistant' | 'system';
+      content: string;
+      attachments?: Array<{ type: string; name: string; url: string; size: number; mimeType: string }>;
+    }) => {
+      // Handle messages with image attachments using vision format
+      if (msg.attachments && msg.attachments.length > 0) {
+        const imageAttachments = msg.attachments.filter(att => att.type === 'image');
+        const fileAttachments = msg.attachments.filter(att => att.type !== 'image');
+
+        if (imageAttachments.length > 0) {
+          // Use vision format for images - create content array
+          const contentArray = [];
+
+          // Add text content if present
+          if (msg.content && msg.content.trim()) {
+            contentArray.push({
+              type: 'text',
+              text: msg.content
+            });
+          }
+
+          // Add images using the correct format for AI SDK
+          imageAttachments.forEach(img => {
+            contentArray.push({
+              type: 'image',
+              image: new URL(img.url)
+            });
+          });
+
+          // Add file descriptions as text if any
+          if (fileAttachments.length > 0) {
+            const fileDescriptions = fileAttachments.map(file =>
+              `[File: ${file.name}]`
+            ).join(' ');
+            contentArray.push({
+              type: 'text',
+              text: fileDescriptions
+            });
+          }
+
+          return {
+            role: msg.role,
+            content: contentArray
+          };
+        } else {
+          // Only non-image files, handle as text descriptions
+          const fileDescriptions = fileAttachments.map(file =>
+            `[File: ${file.name}]`
+          ).join(' ');
+          const content = msg.content ? `${msg.content} ${fileDescriptions}` : fileDescriptions;
+
+          return {
+            role: msg.role,
+            content: content
+          };
+        }
+      }
+
+      // No attachments, simple text message
+      return {
+        role: msg.role,
+        content: msg.content || ''
+      };
+    });
+
     // Create the AI stream
-    const result = await streamText({
-      model: openai('gpt-4o-mini'), // Using GPT-4o-mini for cost efficiency
-      messages: messages.map((message: { role: 'user' | 'assistant' | 'system'; content: string }) => ({
-        role: message.role,
-        content: message.content,
-      })),
+    const result = streamText({
+      model: openai('gpt-4o'), // Using GPT-4o for vision support
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      messages: openaiMessages as any, // Type assertion needed for vision messages
       temperature: 0.7,
     });
 

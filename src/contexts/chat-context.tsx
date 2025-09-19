@@ -137,7 +137,7 @@ interface ChatContextType extends ChatState {
   createNewChat: () => Promise<Chat>;
   selectChat: (chatId: string) => void;
   deleteChat: (chatId: string) => void;
-  sendMessage: (content: string) => Promise<void>;
+  sendMessage: (content: string, attachments?: Attachment[]) => Promise<void>;
   regenerateResponse: (messageId: string) => Promise<void>;
   updateChatTitle: (chatId: string, title: string) => Promise<void>;
   updateMessage: (messageId: string, content: string) => Promise<void>;

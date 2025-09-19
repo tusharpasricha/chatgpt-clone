@@ -155,10 +155,10 @@ export async function prepareMessagesForAPI(
   messages: Message[],
   systemPrompt?: string,
   options: Partial<ContextManagerOptions> = {}
-): Promise<Array<{ role: string; content: string | Array<{ type: string; text?: string; image_url?: { url: string } }> }>> {
+): Promise<Array<{ role: string; content: string | Array<{ type: string; text?: string; image?: URL }> }>> {
   const contextWindow = await manageContextWindow(messages, options);
 
-  const apiMessages: Array<{ role: string; content: string | Array<{ type: string; text?: string; image_url?: { url: string } }> }> = [];
+  const apiMessages: Array<{ role: string; content: string | Array<{ type: string; text?: string; image?: URL }> }> = [];
   
   // Add system message if provided
   if (systemPrompt) {
@@ -178,7 +178,7 @@ export async function prepareMessagesForAPI(
   
   // Add managed messages
   contextWindow.messages.forEach(message => {
-    const apiMessage: { role: string; content: string | Array<{ type: string; text?: string; image_url?: { url: string } }> } = {
+    const apiMessage: { role: string; content: string | Array<{ type: string; text?: string; image?: URL }> } = {
       role: message.role,
       content: message.content,
     };
@@ -188,14 +188,23 @@ export async function prepareMessagesForAPI(
       const imageAttachments = message.attachments.filter(att => att.type === 'image');
       
       if (imageAttachments.length > 0) {
-        // For vision models, format content as array
-        apiMessage.content = [
-          { type: 'text', text: message.content },
-          ...imageAttachments.map(img => ({
-            type: 'image_url',
-            image_url: { url: img.url }
-          }))
-        ];
+        // For vision models, format content as array using AI SDK format
+        const contentArray = [];
+
+        // Add text content if present
+        if (message.content && message.content.trim()) {
+          contentArray.push({ type: 'text', text: message.content });
+        }
+
+        // Add images using AI SDK format
+        imageAttachments.forEach(img => {
+          contentArray.push({
+            type: 'image',
+            image: new URL(img.url)
+          });
+        });
+
+        apiMessage.content = contentArray;
       }
     }
     

@@ -1,21 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { PaperclipIcon, XIcon, FileIcon, ImageIcon, LoaderIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { 
-  DEFAULT_UPLOADCARE_CONFIG, 
-  uploadcareFileToAttachment,
-  formatFileSize,
-  validateUploadcareConfig,
-  type UploadcareFile 
-} from '@/lib/upload/uploadcare';
 import { Attachment } from '@/types';
-
-// Import Uploadcare React components
-import { FileUploaderRegular } from '@uploadcare/react-uploader';
-import '@uploadcare/react-uploader/core.css';
 
 interface UploadcareFileUploadProps {
   onFileSelect: (attachments: Attachment[]) => void;
@@ -24,68 +13,61 @@ interface UploadcareFileUploadProps {
   disabled?: boolean;
 }
 
-export function UploadcareFileUpload({ 
-  onFileSelect, 
-  onFileRemove, 
-  selectedFiles, 
-  disabled 
+export function UploadcareFileUpload({
+  onFileSelect,
+  onFileRemove,
+  selectedFiles,
+  disabled
 }: UploadcareFileUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [isConfigValid, setIsConfigValid] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Validate Uploadcare configuration on mount
-  useEffect(() => {
-    const validation = validateUploadcareConfig();
-    setIsConfigValid(validation.valid);
-    if (!validation.valid) {
-      console.error('Uploadcare configuration error:', validation.error);
-      setUploadError(validation.error || 'Uploadcare not configured');
-    }
-  }, []);
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
 
-  const handleUploadSuccess = (event: {
-    uuid?: string;
-    name?: string;
-    size?: number;
-    isImage?: boolean;
-    mimeType?: string;
-    originalUrl?: string;
-    cdnUrl?: string;
-    allEntries?: Array<{ uuid: string; name: string; size: number; mimeType: string; cdnUrl: string }>
-  }) => {
-    setIsUploading(false);
-    setUploadError(null);
-    
-    // Handle single file upload success
-    if (event.uuid) {
-      const uploadcareFile: UploadcareFile = {
-        uuid: event.uuid,
-        name: event.name || 'Unknown file',
-        size: event.size || 0,
-        isStored: true,
-        isImage: event.isImage || false,
-        mimeType: event.mimeType || 'application/octet-stream',
-        originalUrl: event.originalUrl || event.cdnUrl || '',
-        cdnUrl: event.cdnUrl || '',
-        originalFilename: event.name || 'Unknown file',
-      };
-      
-      const attachment = uploadcareFileToAttachment(uploadcareFile);
-      onFileSelect([attachment]);
-    }
-  };
-
-  const handleUploadError = (event: { error?: { message?: string }; message?: string }) => {
-    setIsUploading(false);
-    const errorMessage = event.error?.message || event.message || 'Upload failed';
-    setUploadError(errorMessage);
-    console.error('Uploadcare upload error:', event);
-  };
-
-  const handleUploadStart = () => {
     setIsUploading(true);
     setUploadError(null);
+
+    try {
+      const formData = new FormData();
+      files.forEach(file => {
+        formData.append('files', file);
+      });
+
+      const uploadResponse = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload files');
+      }
+
+      const uploadResult = await uploadResponse.json();
+
+      // Convert upload result to Attachment format
+      const attachments: Attachment[] = uploadResult.attachments.map((att: { id: string; name: string; type: string; url: string; size: number; mimeType: string }) => ({
+        id: att.id,
+        name: att.name,
+        type: att.type,
+        url: att.url,
+        size: att.size,
+        mimeType: att.mimeType,
+      }));
+
+      onFileSelect(attachments);
+    } catch (error) {
+      console.error('Upload error:', error);
+      setUploadError('Failed to upload files. Please try again.');
+    } finally {
+      setIsUploading(false);
+      // Reset input value to allow selecting the same file again
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
   };
 
   const getFileIcon = (attachment: Attachment) => {
@@ -95,74 +77,46 @@ export function UploadcareFileUpload({
     return <FileIcon className="h-4 w-4 text-gray-500" />;
   };
 
-  // If Uploadcare is not configured, show fallback message
-  if (!isConfigValid) {
-    return (
-      <div className="space-y-2">
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  return (
+    <div className="space-y-2">
+      {/* File Upload Button */}
+      <div className="relative">
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept="image/*,.pdf,.doc,.docx,.txt,.csv,.json"
+          onChange={handleFileSelect}
+          disabled={disabled || isUploading}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+          id="file-upload"
+        />
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          className="h-8 w-8 text-gray-400 cursor-not-allowed opacity-50"
-          disabled
-          title="File upload not configured"
+          className={cn(
+            "h-8 w-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors",
+            disabled && "opacity-50 cursor-not-allowed",
+            isUploading && "text-blue-600"
+          )}
+          disabled={disabled || isUploading}
+          title={isUploading ? "Uploading..." : "Attach files"}
         >
-          <PaperclipIcon className="h-4 w-4" />
+          {isUploading ? (
+            <LoaderIcon className="h-4 w-4 animate-spin" />
+          ) : (
+            <PaperclipIcon className="h-4 w-4" />
+          )}
         </Button>
-        {uploadError && (
-          <div className="text-xs text-red-500 max-w-xs">
-            {uploadError}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-2">
-      {/* Uploadcare File Uploader */}
-      <div className="relative">
-        <FileUploaderRegular
-          pubkey={DEFAULT_UPLOADCARE_CONFIG.publicKey}
-          multiple={DEFAULT_UPLOADCARE_CONFIG.multiple}
-          multipleMax={DEFAULT_UPLOADCARE_CONFIG.multipleMax}
-          multipleMin={DEFAULT_UPLOADCARE_CONFIG.multipleMin}
-          imgOnly={DEFAULT_UPLOADCARE_CONFIG.imgOnly}
-          accept={DEFAULT_UPLOADCARE_CONFIG.accept}
-          maxLocalFileSizeBytes={DEFAULT_UPLOADCARE_CONFIG.maxLocalFileSizeBytes}
-          removeCopyright={DEFAULT_UPLOADCARE_CONFIG.removeCopyright}
-          tabs={DEFAULT_UPLOADCARE_CONFIG.tabs}
-          previewStep={DEFAULT_UPLOADCARE_CONFIG.previewStep}
-          clearable={DEFAULT_UPLOADCARE_CONFIG.clearable}
-          cropPreset={DEFAULT_UPLOADCARE_CONFIG.cropPreset}
-          imageShrink={DEFAULT_UPLOADCARE_CONFIG.imageShrink}
-          imageResize={DEFAULT_UPLOADCARE_CONFIG.imageResize}
-          effects={DEFAULT_UPLOADCARE_CONFIG.effects}
-          localeTranslations={DEFAULT_UPLOADCARE_CONFIG.localeTranslations}
-          onFileUploadSuccess={handleUploadSuccess}
-          onFileUploadFailed={handleUploadError}
-          onFileUploadStart={handleUploadStart}
-          className="uc-light"
-        >
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className={cn(
-              "h-8 w-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors",
-              disabled && "opacity-50 cursor-not-allowed",
-              isUploading && "text-blue-600"
-            )}
-            disabled={disabled || isUploading}
-            title={isUploading ? "Uploading..." : "Attach files"}
-          >
-            {isUploading ? (
-              <LoaderIcon className="h-4 w-4 animate-spin" />
-            ) : (
-              <PaperclipIcon className="h-4 w-4" />
-            )}
-          </Button>
-        </FileUploaderRegular>
       </div>
 
       {/* Upload Error */}

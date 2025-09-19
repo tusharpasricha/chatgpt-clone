@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { uploadToCloudinary, validateFile, generateUniqueFilename } from '@/lib/upload/cloudinary';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(req: NextRequest) {
@@ -27,53 +26,50 @@ export async function POST(req: NextRequest) {
     const uploadResults = [];
 
     for (const file of files) {
-      // Validate file
-      const validation = validateFile(file);
-      if (!validation.valid) {
+      // Basic file validation
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      const allowedTypes = [
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+        'application/pdf',
+        'text/plain',
+        'text/csv',
+        'application/json',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      ];
+
+      if (file.size > maxSize) {
         return NextResponse.json(
-          { error: validation.error },
+          { error: `File size must be less than ${maxSize / (1024 * 1024)}MB` },
+          { status: 400 }
+        );
+      }
+
+      if (!allowedTypes.includes(file.type)) {
+        return NextResponse.json(
+          { error: 'File type not supported' },
           { status: 400 }
         );
       }
 
       try {
-        // Convert file to buffer
+        // For now, create a data URL for the file (this is temporary)
+        // In production, you would upload to a cloud storage service
         const buffer = Buffer.from(await file.arrayBuffer());
-        
-        // Generate unique filename
-        const uniqueFilename = generateUniqueFilename(file.name);
-        
-        // Determine upload options based on file type
-        const isImage = file.type.startsWith('image/');
-        const uploadOptions = {
-          folder: `chatgpt-clone/${userId}`,
-          resourceType: isImage ? 'image' : 'raw' as const,
-          allowedFormats: isImage 
-            ? ['jpg', 'jpeg', 'png', 'gif', 'webp']
-            : ['pdf', 'txt', 'csv', 'json', 'doc', 'docx'],
-          maxFileSize: 10 * 1024 * 1024, // 10MB
-          transformation: isImage ? {
-            quality: 'auto',
-            fetch_format: 'auto',
-          } : undefined,
-        };
-
-        // Upload to Cloudinary
-        const uploadResult = await uploadToCloudinary(
-          buffer,
-          uniqueFilename,
-          uploadOptions
-        );
+        const base64 = buffer.toString('base64');
+        const dataUrl = `data:${file.type};base64,${base64}`;
 
         // Create attachment object
         const attachment = {
           id: uuidv4(),
           name: file.name,
-          type: isImage ? 'image' : 'file' as const,
-          url: uploadResult.secureUrl,
+          type: file.type.startsWith('image/') ? 'image' : 'file' as const,
+          url: dataUrl, // Using data URL for now
           size: file.size,
           mimeType: file.type,
-          cloudinaryId: uploadResult.publicId,
         };
 
         uploadResults.push(attachment);

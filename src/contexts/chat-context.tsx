@@ -136,7 +136,7 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
 interface ChatContextType extends ChatState {
   createNewChat: () => Promise<Chat>;
   selectChat: (chatId: string) => void;
-  deleteChat: (chatId: string) => void;
+  deleteChat: (chatId: string) => Promise<void>;
   sendMessage: (content: string, attachments?: Attachment[]) => Promise<void>;
   regenerateResponse: (messageId: string) => Promise<void>;
   updateChatTitle: (chatId: string, title: string) => Promise<void>;
@@ -269,8 +269,25 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     }
   }, [state.chats]);
 
-  const deleteChat = useCallback((chatId: string) => {
-    dispatch({ type: 'DELETE_CHAT', payload: chatId });
+  const deleteChat = useCallback(async (chatId: string) => {
+    try {
+      // Call API to delete chat from database
+      const response = await fetch(`/api/chats/${chatId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        // Remove from local state - the reducer will handle active chat selection
+        dispatch({ type: 'DELETE_CHAT', payload: chatId });
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to delete chat:', response.status, errorData);
+        dispatch({ type: 'SET_ERROR', payload: 'Failed to delete chat. Please try again.' });
+      }
+    } catch (error) {
+      console.error('Failed to delete chat:', error);
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to delete chat. Please try again.' });
+    }
   }, []);
 
   const updateChatTitle = useCallback(async (chatId: string, title: string) => {

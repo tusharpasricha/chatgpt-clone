@@ -20,19 +20,52 @@ import {
   PenSquareIcon,
   MessageSquareIcon,
   PanelLeftIcon,
+  Trash2Icon,
 } from 'lucide-react';
 import { useChat } from '@/contexts/chat-context';
 import { useState } from 'react';
 import { useUser, UserButton } from '@clerk/nextjs';
+import { Button } from '@/components/ui/button';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 
 export function ChatGPTSidebar() {
   const { toggleSidebar, isMobile } = useSidebar();
-  const { chats, activeChat, selectChat, createNewChat, isLoading, isLoadingChats } = useChat();
+  const { chats, activeChat, selectChat, createNewChat, deleteChat, isLoading, isLoadingChats } = useChat();
   const { user } = useUser();
   const [isCreatingChat, setIsCreatingChat] = useState(false);
+  const [chatToDelete, setChatToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteClick = (chatId: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent chat selection
+    setChatToDelete(chatId);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!chatToDelete) return;
+
+    try {
+      setIsDeleting(true);
+      await deleteChat(chatToDelete);
+      // Dialog will be closed by the confirmation dialog component
+    } catch (error) {
+      console.error('Failed to delete chat:', error);
+      // Re-throw error so confirmation dialog doesn't close
+      throw error;
+    } finally {
+      setIsDeleting(false);
+      setChatToDelete(null);
+    }
+  };
+
+  const getChatToDeleteTitle = () => {
+    const chat = chats.find(c => c.id === chatToDelete);
+    return chat?.title || 'this chat';
+  };
 
   return (
-    <Sidebar collapsible="icon" className="bg-gray-50">
+    <>
+      <Sidebar collapsible="icon" className="bg-gray-50">
       <SidebarHeader className="p-2">
         {/* Expanded State: Logo and Close Button */}
         <div className="flex items-center justify-between mb-2 group-data-[collapsible=icon]:hidden">
@@ -115,30 +148,47 @@ export function ChatGPTSidebar() {
                     const isTemporary = chat.id.startsWith('temp-');
                     return (
                       <SidebarMenuItem key={chat.id}>
-                        <SidebarMenuButton
-                          isActive={activeChat?.id === chat.id}
-                          className={cn(
-                            "text-gray-700 hover:bg-gray-100 cursor-pointer",
-                            activeChat?.id === chat.id && "bg-gray-200 text-gray-900",
-                            isTemporary && "opacity-75"
+                        <div className="group relative flex items-center w-full">
+                          <SidebarMenuButton
+                            isActive={activeChat?.id === chat.id}
+                            className={cn(
+                              "text-gray-700 hover:bg-gray-100 cursor-pointer flex-1 pr-8",
+                              activeChat?.id === chat.id && "bg-gray-200 text-gray-900",
+                              isTemporary && "opacity-75"
+                            )}
+                            onClick={() => {
+                              selectChat(chat.id);
+                              // On mobile, close sidebar after selecting a chat
+                              if (isMobile) {
+                                toggleSidebar();
+                              }
+                            }}
+                          >
+                            <MessageSquareIcon className={cn(
+                              "h-4 w-4",
+                              isTemporary && "animate-pulse"
+                            )} />
+                            <span className="truncate">{chat.title}</span>
+                            {isTemporary && (
+                              <span className="text-xs text-gray-400 ml-auto">Creating...</span>
+                            )}
+                          </SidebarMenuButton>
+
+                          {/* Delete button - only show for non-temporary chats */}
+                          {!isTemporary && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className={cn(
+                                "absolute right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity",
+                                "text-gray-400 hover:text-red-600 hover:bg-red-50"
+                              )}
+                              onClick={(e) => handleDeleteClick(chat.id, e)}
+                            >
+                              <Trash2Icon className="h-3 w-3" />
+                            </Button>
                           )}
-                          onClick={() => {
-                            selectChat(chat.id);
-                            // On mobile, close sidebar after selecting a chat
-                            if (isMobile) {
-                              toggleSidebar();
-                            }
-                          }}
-                        >
-                          <MessageSquareIcon className={cn(
-                            "h-4 w-4",
-                            isTemporary && "animate-pulse"
-                          )} />
-                          <span className="truncate">{chat.title}</span>
-                          {isTemporary && (
-                            <span className="text-xs text-gray-400 ml-auto">Creating...</span>
-                          )}
-                        </SidebarMenuButton>
+                        </div>
                       </SidebarMenuItem>
                     );
                   })
@@ -173,6 +223,20 @@ export function ChatGPTSidebar() {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
-    </Sidebar>
+      </Sidebar>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        open={!!chatToDelete}
+        onOpenChange={(open) => !open && setChatToDelete(null)}
+        title="Delete Chat"
+        description={`Are you sure you want to delete "${getChatToDeleteTitle()}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="destructive"
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeleting}
+      />
+    </>
   );
 }

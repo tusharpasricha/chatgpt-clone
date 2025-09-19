@@ -20,8 +20,8 @@ export function MessageList({ className }: { className?: string }) {
       <div className={`py-8 space-y-12 ${className || ''}`}>
         <div className="flex items-center justify-center h-64 text-gray-500">
           <div className="text-center">
-            <h3 className="text-lg font-medium mb-2">Welcome to ChatGPT Clone</h3>
-            <p className="text-sm">Start a conversation by typing a message below.</p>
+            <h3 className="text-base font-medium mb-2">What&apos;s on the agenda today?</h3>
+            
           </div>
         </div>
       </div>
@@ -33,8 +33,8 @@ export function MessageList({ className }: { className?: string }) {
       <div className={`py-8 space-y-12 ${className || ''}`}>
         <div className="flex items-center justify-center h-64 text-red-500">
           <div className="text-center">
-            <h3 className="text-lg font-medium mb-2">Error</h3>
-            <p className="text-sm">{error}</p>
+            <h3 className="text-base font-medium mb-2">Error</h3>
+            <p className="text-xs">{error}</p>
           </div>
         </div>
       </div>
@@ -50,14 +50,13 @@ export function MessageList({ className }: { className?: string }) {
       {/* Loading indicator */}
       {isLoading && messages.length > 0 && (
         <div className="flex justify-start">
-          <div className="bg-gray-100 rounded-2xl p-4 max-w-[70%]">
+          <div className="p-4 max-w-[70%]">
             <div className="flex items-center space-x-2">
               <div className="flex space-x-1">
                 <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
                 <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                 <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
               </div>
-              <span className="text-sm text-gray-500">AI is thinking...</span>
             </div>
           </div>
         </div>

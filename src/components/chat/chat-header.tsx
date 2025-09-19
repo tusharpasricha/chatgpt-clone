@@ -45,7 +45,7 @@ export function ChatHeader() {
         {/* Left side - Chat title */}
         <div className="flex items-center gap-3">
           <h1 className="font-medium text-sm text-foreground">
-            {activeChat?.title || 'ChatGPT'}
+            ChatGPT
           </h1>
         </div>
 
@@ -54,7 +54,7 @@ export function ChatHeader() {
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-20 text-foreground hover:text-foreground cursor-pointer"
+            className="h-8 w-20 text-sm text-foreground hover:text-foreground cursor-pointer"
           >
             <Share className="h-2 w-2" />
             Share

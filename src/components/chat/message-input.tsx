@@ -63,7 +63,7 @@ export function MessageInput() {
   return (
     <div className="relative">
       <form onSubmit={handleSubmit} className="relative">
-        <div className="relative flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 border border-border/40 rounded-2xl sm:rounded-3xl bg-background shadow-sm focus-within:shadow-md transition-all duration-200 hover:border-border/60">
+        <div className="relative flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 border !border-black/15 rounded-2xl sm:rounded-3xl bg-background shadow-sm focus-within:shadow-md transition-all duration-200 hover:border-border/30">
           {/* File Upload */}
           <div className="flex-shrink-0">
             <UploadcareFileUpload
@@ -113,7 +113,7 @@ export function MessageInput() {
 
       {/* Footer text */}
       <div className="text-center mt">
-        <p className="text-xs text-muted-foreground">
+        <p className="text-[10px] text-muted-foreground">
           ChatGPT can make mistakes. Check important info.
         </p>
       </div>

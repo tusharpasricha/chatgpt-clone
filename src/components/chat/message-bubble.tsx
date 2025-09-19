@@ -85,14 +85,14 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             <Textarea
               value={editContent}
               onChange={(e) => setEditContent(e.target.value)}
-              className="min-h-[60px] resize-none border-gray-300 focus:border-gray-500"
+              className="min-h-[60px] resize-none border-gray-200 focus:border-gray-300"
               autoFocus
             />
             <div className="flex gap-2">
               <Button
                 size="sm"
                 onClick={handleSaveEdit}
-                className="h-7 px-3 text-xs"
+                className="h-6 px-2 text-[10px]"
               >
                 <CheckIcon className="h-3 w-3 mr-1" />
                 Save
@@ -101,7 +101,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                 size="sm"
                 variant="outline"
                 onClick={handleCancelEdit}
-                className="h-7 px-3 text-xs"
+                className="h-6 px-2 text-[10px]"
               >
                 <XIcon className="h-3 w-3 mr-1" />
                 Cancel
@@ -122,7 +122,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             {/* Message Content */}
             {message.content && (
               <div className={cn(
-                "message-content prose prose-sm max-w-none break-words text-sm",
+                "message-content prose prose-sm max-w-none break-words text-xs",
                 isUser && "text-gray-900",
                 isAssistant && "dark:prose-invert text-foreground"
               )}>
@@ -257,7 +257,7 @@ function MessageContent({ content }: { content: string }) {
 
       elements.push(
         <pre key={`code-${elements.length}`} className="bg-muted rounded-lg p-4 overflow-x-auto my-4">
-          <code className="text-sm font-mono">
+          <code className="text-xs font-mono">
             {codeLines.join('\n')}
           </code>
         </pre>
@@ -273,7 +273,7 @@ function MessageContent({ content }: { content: string }) {
               return (
                 <code
                   key={partIndex}
-                  className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono"
+                  className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono"
                 >
                   {part.slice(1, -1)}
                 </code>
@@ -334,7 +334,7 @@ function AttachmentDisplay({ attachment }: { attachment: { type: string; url: st
             <DownloadIcon className="h-4 w-4" />
           </Button>
         </div>
-        <div className="mt-1 text-xs text-gray-500">
+        <div className="mt-1 text-[10px] text-gray-500">
           {attachment.name} • {formatFileSize(attachment.size)}
         </div>
       </div>
@@ -342,15 +342,15 @@ function AttachmentDisplay({ attachment }: { attachment: { type: string; url: st
   }
 
   return (
-    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border max-w-sm">
+    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border-gray-100 border max-w-sm">
       <div className="flex-shrink-0">
         <FileIcon className="h-8 w-8 text-gray-400" />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium text-gray-900 truncate">
+        <div className="text-xs font-medium text-gray-900 truncate">
           {attachment.name}
         </div>
-        <div className="text-xs text-gray-500">
+        <div className="text-[10px] text-gray-500">
           {formatFileSize(attachment.size)}
         </div>
       </div>

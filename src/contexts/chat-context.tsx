@@ -67,7 +67,7 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
         ...state,
         chats: filteredChats,
         activeChat: state.activeChat?.id === action.payload
-          ? (filteredChats[0] || null)
+          ? null
           : state.activeChat
       };
     
@@ -186,10 +186,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
           dispatch({ type: 'SET_CHATS', payload: chats });
 
-          // Set first chat as active if no active chat
-          if (chats.length > 0) {
-            dispatch({ type: 'SET_ACTIVE_CHAT', payload: chats[0] });
-          }
+          // Don't automatically select any chat - let user choose
         } else {
           const errorData = await response.json();
           console.error('Failed to load chats:', response.status, errorData);

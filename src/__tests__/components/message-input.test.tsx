@@ -86,11 +86,11 @@ describe('MessageInput', () => {
     expect(mockSendMessage).not.toHaveBeenCalled()
   })
 
-  it('disables input when loading', () => {
+  it('disables input when loading', async () => {
     const loadingContext = { ...mockChatContext, isLoading: true }
     const { useChat } = await import('@/contexts/chat-context')
     jest.mocked(useChat).mockReturnValue(loadingContext)
-    
+
     render(<MessageInput />)
     
     const sendButton = screen.getByRole('button', { name: /send/i })

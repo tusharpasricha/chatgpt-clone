@@ -28,33 +28,31 @@ describe('ChatContext', () => {
     expect(result.current.error).toBeNull()
   })
 
-  it('creates new chat', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({
-        id: 'new-chat-id',
-        title: 'New Chat',
-        messages: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }),
-    })
-
+  it('creates new chat (clears active chat for welcome state)', () => {
     const { result } = renderHook(() => useChat(), { wrapper })
-    
-    await act(async () => {
-      const newChat = await result.current.createNewChat()
-      expect(newChat.id).toBe('new-chat-id')
+
+    // First set an active chat
+    act(() => {
+      result.current.selectChat({
+        id: 'existing-chat',
+        title: 'Existing Chat',
+        messages: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
     })
 
-    expect(mockFetch).toHaveBeenCalledWith('/api/chats', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: 'New Chat' }),
+    expect(result.current.activeChat?.id).toBe('existing-chat')
+
+    // Now create new chat - should clear active chat
+    act(() => {
+      result.current.createNewChat()
     })
+
+    expect(result.current.activeChat).toBeNull()
   })
 
-  it('sends message', async () => {
+  it('sends message with existing chat', async () => {
     const mockResponse = {
       ok: true,
       body: {
@@ -71,11 +69,11 @@ describe('ChatContext', () => {
         }),
       },
     }
-    
+
     mockFetch.mockResolvedValueOnce(mockResponse)
 
     const { result } = renderHook(() => useChat(), { wrapper })
-    
+
     // First create a chat
     act(() => {
       result.current.selectChat({
@@ -91,6 +89,66 @@ describe('ChatContext', () => {
       await result.current.sendMessage('Hello')
     })
 
+    expect(mockFetch).toHaveBeenCalledWith('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: [{ role: 'user', content: 'Hello' }],
+      }),
+    })
+  })
+
+  it('sends message without existing chat (creates new chat)', async () => {
+    // Mock chat creation
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({
+        chat: {
+          id: 'new-chat-id',
+          title: 'New Chat',
+          messages: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }
+      }),
+    })
+
+    // Mock message sending
+    const mockResponse = {
+      ok: true,
+      body: {
+        getReader: () => ({
+          read: jest.fn()
+            .mockResolvedValueOnce({
+              done: false,
+              value: new TextEncoder().encode('0:{"type":"text-delta","textDelta":"Hello"}'),
+            })
+            .mockResolvedValueOnce({
+              done: true,
+              value: undefined,
+            }),
+        }),
+      },
+    }
+    mockFetch.mockResolvedValueOnce(mockResponse)
+
+    const { result } = renderHook(() => useChat(), { wrapper })
+
+    // No active chat initially
+    expect(result.current.activeChat).toBeNull()
+
+    await act(async () => {
+      await result.current.sendMessage('Hello')
+    })
+
+    // Should have created a chat
+    expect(mockFetch).toHaveBeenCalledWith('/api/chats', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: 'New Chat' }),
+    })
+
+    // Should have sent the message
     expect(mockFetch).toHaveBeenCalledWith('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

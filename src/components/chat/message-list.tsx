@@ -15,17 +15,10 @@ export function MessageList({ className }: { className?: string }) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [activeChat?.messages]);
 
+  // This component should only render when there's an active chat
+  // The welcome state is now handled in ChatInterface
   if (!activeChat) {
-    return (
-      <div className={`py-8 space-y-12 ${className || ''}`}>
-        <div className="flex items-center justify-center h-64 text-gray-500">
-          <div className="text-center">
-            <h3 className="text-base font-medium mb-2">What&apos;s on the agenda today?</h3>
-            
-          </div>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   if (error) {

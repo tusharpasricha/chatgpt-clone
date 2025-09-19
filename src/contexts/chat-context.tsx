@@ -134,7 +134,7 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
 }
 
 interface ChatContextType extends ChatState {
-  createNewChat: () => Promise<Chat>;
+  createNewChat: () => void;
   selectChat: (chatId: string) => void;
   deleteChat: (chatId: string) => Promise<void>;
   sendMessage: (content: string, attachments?: Attachment[]) => Promise<void>;
@@ -201,7 +201,14 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     loadChats();
   }, [isLoaded, user]);
 
-  const createNewChat = useCallback(async (): Promise<Chat> => {
+  const createNewChat = useCallback(() => {
+    // Simply clear the active chat to show welcome state
+    // The actual chat will be created when the user sends their first message
+    dispatch({ type: 'SET_ACTIVE_CHAT', payload: null });
+  }, []);
+
+  // Internal function to actually create a chat when needed
+  const createActualChat = useCallback(async (): Promise<Chat> => {
     // Create optimistic chat immediately for better UX
     const optimisticChat: Chat = {
       id: `temp-${Date.now()}`,
@@ -312,8 +319,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
     if (!currentChat) {
       // Create new chat if none exists
-      currentChat = await createNewChat();
-      dispatch({ type: 'SET_ACTIVE_CHAT', payload: currentChat });
+      currentChat = await createActualChat();
     }
     
     // Add user message
@@ -460,7 +466,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
-  }, [state.activeChat, createNewChat, updateChatTitle]);
+  }, [state.activeChat, createActualChat, updateChatTitle]);
 
   const updateMessage = useCallback(async (messageId: string, content: string) => {
     if (!state.activeChat) return;

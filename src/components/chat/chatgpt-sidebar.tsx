@@ -138,10 +138,10 @@ export function ChatGPTSidebar() {
           className="w-full justify-start text-gray-700 hover:bg-gray-100 h-10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           tooltip="New chat"
           disabled={isCreatingChat || isLoading}
-          onClick={async () => {
+          onClick={() => {
             try {
               setIsCreatingChat(true);
-              await createNewChat();
+              createNewChat();
               // On mobile, close sidebar after action
               if (isMobile) {
                 toggleSidebar();

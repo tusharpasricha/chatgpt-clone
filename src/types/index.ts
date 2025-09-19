@@ -47,7 +47,7 @@ export interface ChatSettings {
   systemPrompt?: string;
 }
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
@@ -84,7 +84,7 @@ export interface InputProps {
 export interface AppError {
   code: string;
   message: string;
-  details?: any;
+  details?: Record<string, unknown>;
 }
 
 // Context types

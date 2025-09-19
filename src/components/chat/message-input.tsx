@@ -3,10 +3,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { useChat } from '@/contexts/chat-context';
+import { FileUpload } from './file-upload';
 import { cn } from '@/lib/utils';
-import { 
-  SendIcon, 
-  PaperclipIcon, 
+import {
+  SendIcon,
   MicIcon,
   StopCircleIcon
 } from 'lucide-react';
@@ -14,7 +15,8 @@ import {
 export function MessageInput() {
   const [message, setMessage] = useState('');
   const [isRecording, setIsRecording] = useState(false);
-  const [isSending, setIsSending] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const { sendMessage, isLoading } = useChat();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-resize textarea
@@ -26,19 +28,53 @@ export function MessageInput() {
     }
   }, [message]);
 
+  const handleFileSelect = (files: File[]) => {
+    setSelectedFiles(prev => [...prev, ...files]);
+  };
+
+  const handleFileRemove = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!message.trim() || isSending) return;
+    if ((!message.trim() && selectedFiles.length === 0) || isLoading) return;
 
-    setIsSending(true);
-    // TODO: Implement actual message sending
-    console.log('Sending message:', message);
-    
-    // Simulate sending delay
-    setTimeout(() => {
-      setMessage('');
-      setIsSending(false);
-    }, 1000);
+    const messageToSend = message.trim();
+    const filesToSend = [...selectedFiles];
+    setMessage(''); // Clear input immediately
+    setSelectedFiles([]); // Clear files immediately
+
+    try {
+      let attachments: { type: string; url: string; name: string; size: number }[] = [];
+
+      // Upload files if any
+      if (filesToSend.length > 0) {
+        const formData = new FormData();
+        filesToSend.forEach(file => {
+          formData.append('files', file);
+        });
+
+        const uploadResponse = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error('Failed to upload files');
+        }
+
+        const uploadResult = await uploadResponse.json();
+        attachments = uploadResult.attachments;
+      }
+
+      await sendMessage(messageToSend, attachments);
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      // Restore message and files on error
+      setMessage(messageToSend);
+      setSelectedFiles(filesToSend);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -46,11 +82,6 @@ export function MessageInput() {
       e.preventDefault();
       handleSubmit(e);
     }
-  };
-
-  const handleFileUpload = () => {
-    // TODO: Implement file upload
-    console.log('File upload clicked');
   };
 
   const toggleRecording = () => {
@@ -62,17 +93,16 @@ export function MessageInput() {
   return (
     <div className="relative">
       <form onSubmit={handleSubmit} className="relative">
-        <div className="relative flex items-center gap-2 px-3 py-1 border border-border/40 rounded-3xl bg-background shadow-sm focus-within:shadow-md transition-all duration-200 hover:border-border/60">
-          {/* File Upload Button */}
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-10 w-10 flex-shrink-0 text-muted-foreground hover:text-foreground cursor-pointer"
-            onClick={handleFileUpload}
-          >
-            <PaperclipIcon className="h-4 w-4" />
-          </Button>
+        <div className="relative flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 border border-border/40 rounded-2xl sm:rounded-3xl bg-background shadow-sm focus-within:shadow-md transition-all duration-200 hover:border-border/60">
+          {/* File Upload */}
+          <div className="flex-shrink-0">
+            <FileUpload
+              onFileSelect={handleFileSelect}
+              onFileRemove={handleFileRemove}
+              selectedFiles={selectedFiles}
+              disabled={isLoading}
+            />
+          </div>
 
           {/* Message Input */}
           <Textarea
@@ -112,13 +142,13 @@ export function MessageInput() {
             size="icon"
             className={cn(
               "h-10 w-10 flex-shrink-0 rounded-full",
-              message.trim() && !isSending
+              message.trim() && !isLoading
                 ? "bg-foreground text-background hover:bg-foreground/90 cursor-pointer"
                 : "bg-muted text-muted-foreground cursor-not-allowed"
             )}
-            disabled={!message.trim() || isSending}
+            disabled={!message.trim() || isLoading}
           >
-            {isSending ? (
+            {isLoading ? (
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
             ) : (
               <SendIcon className="h-4 w-4" />
@@ -128,7 +158,7 @@ export function MessageInput() {
       </form>
 
       {/* Character count or other info */}
-      <div className="flex justify-between items-center mt-2 px-3">
+      <div className="flex justify-between items-center mt-2 px-2 sm:px-3">
         <div className="text-xs text-muted-foreground">
           {isRecording && (
             <span className="flex items-center gap-1">

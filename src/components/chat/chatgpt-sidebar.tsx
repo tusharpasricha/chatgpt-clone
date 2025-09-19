@@ -19,14 +19,17 @@ import { cn } from '@/lib/utils';
 import {
   PenSquareIcon,
   MessageSquareIcon,
-  UserIcon,
   PanelLeftIcon,
 } from 'lucide-react';
-import { useChat } from '@/hooks/use-chat';
+import { useChat } from '@/contexts/chat-context';
+import { useState } from 'react';
+import { useUser, UserButton } from '@clerk/nextjs';
 
 export function ChatGPTSidebar() {
   const { toggleSidebar, isMobile } = useSidebar();
-  const { chats, selectChat, createNewChat } = useChat();
+  const { chats, activeChat, selectChat, createNewChat, isLoading, isLoadingChats } = useChat();
+  const { user } = useUser();
+  const [isCreatingChat, setIsCreatingChat] = useState(false);
 
   return (
     <Sidebar collapsible="icon" className="bg-gray-50">
@@ -60,18 +63,26 @@ export function ChatGPTSidebar() {
 
         {/* New Chat Button */}
         <SidebarMenuButton
-          className="w-full justify-start text-gray-700 hover:bg-gray-100 h-10 cursor-pointer"
+          className="w-full justify-start text-gray-700 hover:bg-gray-100 h-10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           tooltip="New chat"
-          onClick={() => {
-            createNewChat();
-            // On mobile, close sidebar after action
-            if (isMobile) {
-              toggleSidebar();
+          disabled={isCreatingChat || isLoading}
+          onClick={async () => {
+            try {
+              setIsCreatingChat(true);
+              await createNewChat();
+              // On mobile, close sidebar after action
+              if (isMobile) {
+                toggleSidebar();
+              }
+            } catch (error) {
+              console.error('Failed to create new chat:', error);
+            } finally {
+              setIsCreatingChat(false);
             }
           }}
         >
-          <PenSquareIcon className="h-4 w-4" />
-          <span>New chat</span>
+          <PenSquareIcon className={`h-4 w-4 ${isCreatingChat ? 'animate-spin' : ''}`} />
+          <span>{isCreatingChat ? 'Creating...' : 'New chat'}</span>
         </SidebarMenuButton>
 
 
@@ -88,27 +99,50 @@ export function ChatGPTSidebar() {
           <SidebarGroupContent className="flex-1 overflow-hidden">
             <div className="h-full overflow-y-auto scrollbar-thin">
               <SidebarMenu>
-                {chats.map((chat) => (
-                  <SidebarMenuItem key={chat.id}>
-                    <SidebarMenuButton
-                      isActive={chat.isActive || false}
-                      className={cn(
-                        "text-gray-700 hover:bg-gray-100 cursor-pointer",
-                        chat.isActive && "bg-gray-200 text-gray-900"
-                      )}
-                      onClick={() => {
-                        selectChat(chat.id);
-                        // On mobile, close sidebar after selecting a chat
-                        if (isMobile) {
-                          toggleSidebar();
-                        }
-                      }}
-                    >
-                      <MessageSquareIcon className="h-4 w-4" />
-                      <span className="truncate">{chat.title}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {isLoadingChats ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="flex items-center space-x-2 text-gray-500">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500"></div>
+                      <span className="text-sm">Loading chats...</span>
+                    </div>
+                  </div>
+                ) : chats.length === 0 ? (
+                  <div className="flex items-center justify-center py-8">
+                    <span className="text-sm text-gray-500">No chats yet</span>
+                  </div>
+                ) : (
+                  chats.map((chat) => {
+                    const isTemporary = chat.id.startsWith('temp-');
+                    return (
+                      <SidebarMenuItem key={chat.id}>
+                        <SidebarMenuButton
+                          isActive={activeChat?.id === chat.id}
+                          className={cn(
+                            "text-gray-700 hover:bg-gray-100 cursor-pointer",
+                            activeChat?.id === chat.id && "bg-gray-200 text-gray-900",
+                            isTemporary && "opacity-75"
+                          )}
+                          onClick={() => {
+                            selectChat(chat.id);
+                            // On mobile, close sidebar after selecting a chat
+                            if (isMobile) {
+                              toggleSidebar();
+                            }
+                          }}
+                        >
+                          <MessageSquareIcon className={cn(
+                            "h-4 w-4",
+                            isTemporary && "animate-pulse"
+                          )} />
+                          <span className="truncate">{chat.title}</span>
+                          {isTemporary && (
+                            <span className="text-xs text-gray-400 ml-auto">Creating...</span>
+                          )}
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })
+                )}
               </SidebarMenu>
             </div>
           </SidebarGroupContent>
@@ -120,8 +154,14 @@ export function ChatGPTSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton className="text-gray-700 hover:bg-gray-100 justify-between cursor-pointer">
               <div className="flex items-center">
-                <UserIcon className="h-4 w-4 mr-2" />
-                <span>Tushar Pasri...</span>
+                <UserButton
+                  appearance={{
+                    elements: {
+                      avatarBox: "h-8 w-8",
+                    },
+                  }}
+                />
+                <span className="ml-2">{user?.firstName || user?.emailAddresses[0]?.emailAddress || 'User'}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <span className="text-xs text-gray-500">Free</span>

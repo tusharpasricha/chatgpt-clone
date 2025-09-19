@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { ClerkProvider, SignedIn, SignedOut } from '@clerk/nextjs';
 import "./globals.css";
 import { APP_CONFIG } from "@/constants";
+import { AutoSignIn } from "@/components/auth/auto-signin";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -43,15 +45,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${inter.variable} font-sans antialiased bg-background text-foreground`}
-        suppressHydrationWarning
-      >
-        <div className="relative flex h-screen overflow-hidden">
-          {children}
-        </div>
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en" suppressHydrationWarning>
+        <body
+          className={`${inter.variable} font-sans antialiased bg-background text-foreground`}
+          suppressHydrationWarning
+        >
+          <SignedOut>
+            <AutoSignIn />
+          </SignedOut>
+          <SignedIn>
+            <div className="relative flex min-h-screen overflow-hidden">
+              {children}
+            </div>
+          </SignedIn>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

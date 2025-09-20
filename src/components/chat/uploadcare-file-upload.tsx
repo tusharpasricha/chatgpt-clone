@@ -2,24 +2,31 @@
 
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { PaperclipIcon, XIcon, FileIcon, ImageIcon, LoaderIcon } from 'lucide-react';
+import { PaperclipIcon, LoaderIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Attachment } from '@/types';
 
+interface UploadingFile {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  isUploading: boolean;
+}
+
 interface UploadcareFileUploadProps {
   onFileSelect: (attachments: Attachment[]) => void;
-  onFileRemove: (index: number) => void;
-  selectedFiles: Attachment[];
   disabled?: boolean;
+  uploadingFiles?: UploadingFile[];
+  onUploadingFilesChange?: (files: UploadingFile[]) => void;
 }
 
 export function UploadcareFileUpload({
   onFileSelect,
-  onFileRemove,
-  selectedFiles,
-  disabled
+  disabled,
+  uploadingFiles = [],
+  onUploadingFilesChange
 }: UploadcareFileUploadProps) {
-  const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -27,8 +34,21 @@ export function UploadcareFileUpload({
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
 
-    setIsUploading(true);
     setUploadError(null);
+
+    // Create uploading file objects
+    const uploadingFileObjects: UploadingFile[] = files.map(file => ({
+      id: `uploading-${Date.now()}-${Math.random()}`,
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      isUploading: true
+    }));
+
+    // Add uploading files to the state
+    if (onUploadingFilesChange) {
+      onUploadingFilesChange([...uploadingFiles, ...uploadingFileObjects]);
+    }
 
     try {
       const formData = new FormData();
@@ -57,12 +77,27 @@ export function UploadcareFileUpload({
         mimeType: att.mimeType,
       }));
 
+      // Remove uploading files and add completed attachments
+      if (onUploadingFilesChange) {
+        const remainingUploadingFiles = uploadingFiles.filter(
+          uf => !uploadingFileObjects.some(newUf => newUf.id === uf.id)
+        );
+        onUploadingFilesChange(remainingUploadingFiles);
+      }
+
       onFileSelect(attachments);
     } catch (error) {
       console.error('Upload error:', error);
       setUploadError('Failed to upload files. Please try again.');
+
+      // Remove failed uploading files
+      if (onUploadingFilesChange) {
+        const remainingUploadingFiles = uploadingFiles.filter(
+          uf => !uploadingFileObjects.some(newUf => newUf.id === uf.id)
+        );
+        onUploadingFilesChange(remainingUploadingFiles);
+      }
     } finally {
-      setIsUploading(false);
       // Reset input value to allow selecting the same file again
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
@@ -70,20 +105,9 @@ export function UploadcareFileUpload({
     }
   };
 
-  const getFileIcon = (attachment: Attachment) => {
-    if (attachment.type === 'image') {
-      return <ImageIcon className="h-4 w-4 text-blue-500" />;
-    }
-    return <FileIcon className="h-4 w-4 text-gray-500" />;
-  };
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
+
+  const isUploading = uploadingFiles.length > 0;
 
   return (
     <div className="space-y-2">
@@ -112,7 +136,7 @@ export function UploadcareFileUpload({
           title={isUploading ? "Uploading..." : "Attach files"}
         >
           {isUploading ? (
-            <LoaderIcon className="h-4 w-4 animate-spin" />
+            <LoaderIcon className="h-4 w-4 animate-spin text-gray-400" />
           ) : (
             <PaperclipIcon className="h-4 w-4" />
           )}
@@ -123,46 +147,6 @@ export function UploadcareFileUpload({
       {uploadError && (
         <div className="text-xs text-red-500 max-w-xs">
           {uploadError}
-        </div>
-      )}
-
-      {/* Selected Files List */}
-      {selectedFiles.length > 0 && (
-        <div className="space-y-1">
-          {selectedFiles.map((file, index) => (
-            <div
-              key={`${file.id}-${index}`}
-              className="flex items-center gap-2 p-2 bg-gray-50 rounded-md text-sm"
-            >
-              {getFileIcon(file)}
-              <div className="flex-1 min-w-0">
-                <div className="truncate font-medium text-gray-900">
-                  {file.name}
-                </div>
-                <div className="text-xs text-gray-500">
-                  {formatFileSize(file.size)}
-                </div>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md flex-shrink-0"
-                onClick={() => onFileRemove(index)}
-                disabled={disabled || isUploading}
-              >
-                <XIcon className="h-3 w-3" />
-              </Button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Upload Progress */}
-      {isUploading && (
-        <div className="text-xs text-blue-600 flex items-center gap-1">
-          <LoaderIcon className="h-3 w-3 animate-spin" />
-          Uploading files...
         </div>
       )}
     </div>

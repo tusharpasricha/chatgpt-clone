@@ -12,6 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useChat } from '@/contexts/chat-context';
 import { useState } from 'react';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
@@ -42,8 +43,12 @@ export function ChatHeader() {
   return (
     <header>
       <div className="flex items-center justify-between h-10 sm:h-12 px-3 sm:px-4">
-        {/* Left side - Chat title */}
+        {/* Left side - Sidebar trigger (mobile) + Chat title */}
         <div className="flex items-center gap-3">
+          {/* Mobile sidebar trigger */}
+          <div className="md:hidden">
+            <SidebarTrigger />
+          </div>
           <h1 className="font-medium text-sm text-foreground">
             ChatGPT
           </h1>

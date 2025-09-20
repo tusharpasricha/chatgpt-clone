@@ -150,20 +150,20 @@ export const ALL_SUPPORTED_TYPES = [
  * Check if file type is supported
  */
 export function isSupportedFileType(mimeType: string): boolean {
-  return ALL_SUPPORTED_TYPES.includes(mimeType as any);
+  return (ALL_SUPPORTED_TYPES as readonly string[]).includes(mimeType);
 }
 
 /**
  * Get file category from mime type
  */
 export function getFileCategory(mimeType: string): 'image' | 'document' | 'text' | 'unknown' {
-  if (SUPPORTED_FILE_TYPES.images.includes(mimeType as any)) {
+  if ((SUPPORTED_FILE_TYPES.images as readonly string[]).includes(mimeType)) {
     return 'image';
   }
-  if (SUPPORTED_FILE_TYPES.documents.includes(mimeType as any)) {
+  if ((SUPPORTED_FILE_TYPES.documents as readonly string[]).includes(mimeType)) {
     return 'document';
   }
-  if (SUPPORTED_FILE_TYPES.text.includes(mimeType as any)) {
+  if ((SUPPORTED_FILE_TYPES.text as readonly string[]).includes(mimeType)) {
     return 'text';
   }
   return 'unknown';

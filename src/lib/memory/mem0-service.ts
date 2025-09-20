@@ -35,7 +35,7 @@ export class Mem0Service {
   /**
    * Safely parse timestamp to avoid Invalid Date errors
    */
-  private parseTimestamp(timestamp: any): Date {
+  private parseTimestamp(timestamp: string | number | Date | null | undefined): Date {
     if (!timestamp) return new Date();
 
     const date = new Date(timestamp);
@@ -121,10 +121,9 @@ export class Mem0Service {
   ): Promise<MemoryEntry[]> {
     if (!this.client) return [];
 
-    const { 
+    const {
       limit = MEMORY_CONFIG.MAX_CONTEXT_MEMORIES,
-      memoryTypes,
-      minRelevance = MEMORY_CONFIG.MIN_RELEVANCE_SCORE 
+      memoryTypes
     } = options;
 
     try {
@@ -162,8 +161,23 @@ export class Mem0Service {
 
       const result = await response.json();
 
-      return (result as any[])
-        ?.map((memory: any) => ({
+      interface Mem0SearchResult {
+        id: string;
+        memory: string;
+        user_id: string;
+        categories?: string[];
+        created_at?: string;
+        metadata?: {
+          chat_id?: string;
+          timestamp?: string;
+          confidence?: number;
+          source?: string;
+          expires_at?: string;
+        };
+      }
+
+      return (result as Mem0SearchResult[])
+        ?.map((memory: Mem0SearchResult) => ({
           id: memory.id,
           content: memory.memory,
           userId: memory.user_id,
@@ -212,7 +226,23 @@ export class Mem0Service {
       const result = await response.json();
       console.log('Raw memories response:', result);
 
-      const memories = (result?.results || result || []).map((memory: any) => ({
+      interface Mem0GetResult {
+        id: string;
+        memory?: string;
+        data?: { memory?: string };
+        user_id?: string;
+        categories?: string[];
+        created_at?: string;
+        metadata?: {
+          chat_id?: string;
+          timestamp?: string;
+          confidence?: number;
+          source?: string;
+          expires_at?: string;
+        };
+      }
+
+      const memories = (result?.results || result || []).map((memory: Mem0GetResult) => ({
         id: memory.id,
         content: memory.memory || memory.data?.memory,
         userId,

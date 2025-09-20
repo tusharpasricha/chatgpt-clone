@@ -38,3 +38,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# testing
+/coverage
+*.test.*
+*.spec.*
+__tests__/
+jest.config.*
+jest.setup.*

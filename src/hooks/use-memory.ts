@@ -5,8 +5,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
-import { MemoryEntry } from '@/lib/memory/mem0-service';
-import { MemoryType } from '@/lib/memory/mem0-config';
+import { MemoryEntry, MemoryType } from '@/lib/memory/mem0-config';
 
 interface MemoryStats {
   totalMemories: number;

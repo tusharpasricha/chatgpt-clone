@@ -4,8 +4,8 @@
  */
 
 import { Message } from '@/types';
-import { mem0Service, MemoryEntry } from './mem0-service';
-import { MemoryType } from './mem0-config';
+import { mem0Service } from './mem0-service';
+import { MemoryEntry, MemoryType } from './mem0-config';
 import { 
   prepareMessagesForAPI as originalPrepareMessages,
   ContextManagerOptions,

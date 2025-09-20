@@ -21,6 +21,7 @@ type ChatAction =
   | { type: 'DELETE_CHAT'; payload: string }
   | { type: 'ADD_MESSAGE'; payload: { chatId: string; message: Message } }
   | { type: 'UPDATE_MESSAGE'; payload: { chatId: string; messageId: string; updates: Partial<Message> } }
+  | { type: 'TRUNCATE_MESSAGES'; payload: { chatId: string; fromMessageId: string } }
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_LOADING_CHATS'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null };

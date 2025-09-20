@@ -117,15 +117,19 @@ export async function manageContextWindow(
   // Always keep the last message (usually the user's latest question)
   if (messages.length > 0) {
     const lastMessage = messages[messages.length - 1];
-    keptMessages.unshift(lastMessage);
-    keptTokens += estimateMessageTokens(lastMessage);
+    if (lastMessage) {
+      keptMessages.unshift(lastMessage);
+      keptTokens += estimateMessageTokens(lastMessage);
+    }
   }
   
   // Work backwards, keeping messages that fit
   for (let i = messages.length - 2; i >= 0; i--) {
     const message = messages[i];
+    if (!message) continue;
+
     const messageTokens = estimateMessageTokens(message);
-    
+
     // Check if we can fit this message
     if (keptTokens + messageTokens + summaryTokens <= availableTokens) {
       keptMessages.unshift(message);

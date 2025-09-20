@@ -88,9 +88,12 @@ export function truncateToContextLimit(
 
   // Start from the most recent messages
   for (let i = messages.length - 1; i >= 0; i--) {
-    const messageTokens = estimateTokenCount(messages[i]);
+    const message = messages[i];
+    if (!message) continue;
+
+    const messageTokens = estimateTokenCount(message);
     if (totalTokens + messageTokens <= limit) {
-      result.unshift(messages[i]);
+      result.unshift(message);
       totalTokens += messageTokens;
     } else {
       break;

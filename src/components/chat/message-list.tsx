@@ -5,7 +5,7 @@ import { MessageBubble } from '@/components/chat/message-bubble';
 import { useChat } from '@/contexts/chat-context';
 
 export function MessageList({ className }: { className?: string }) {
-  const { activeChat, isLoading, error } = useChat();
+  const { activeChat, error } = useChat();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const messages = activeChat?.messages || [];
@@ -39,21 +39,6 @@ export function MessageList({ className }: { className?: string }) {
       {messages.map((message) => (
         <MessageBubble key={message.id} message={message} />
       ))}
-
-      {/* Loading indicator */}
-      {isLoading && messages.length > 0 && (
-        <div className="flex justify-start">
-          <div className="p-4 max-w-[70%]">
-            <div className="flex items-center space-x-2">
-              <div className="flex space-x-1">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Scroll anchor */}
       <div ref={messagesEndRef} />

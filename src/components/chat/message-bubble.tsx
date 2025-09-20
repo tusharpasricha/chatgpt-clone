@@ -9,8 +9,6 @@ import { cn } from '@/lib/utils';
 import { type Message } from '@/types';
 import {
   CopyIcon,
-  ThumbsUpIcon,
-  ThumbsDownIcon,
   RefreshCwIcon,
   EditIcon,
   CheckIcon,
@@ -28,7 +26,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
   const [copied, setCopied] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(message.content);
-  const { regenerateResponse, editMessageAndRegenerate } = useChat();
+  const { regenerateResponse, editMessageAndRegenerate, isLoading } = useChat();
 
   const handleCopy = async () => {
     try {
@@ -74,125 +72,62 @@ export function MessageBubble({ message }: MessageBubbleProps) {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Message Content */}
-      <div className={cn(
-        "p-4 overflow-hidden relative",
-        isUser && "max-w-[70%] bg-gray-100 text-gray-900 rounded-2xl rounded-br-md",
-        isAssistant && "w-full bg-transparent"
-      )}>
-        {isEditing && isUser ? (
-          <div className="space-y-2">
-            <Textarea
-              value={editContent}
-              onChange={(e) => setEditContent(e.target.value)}
-              className="min-h-[60px] resize-none border-gray-200 focus:border-gray-300"
-              autoFocus
-            />
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                onClick={handleSaveEdit}
-                className="h-6 px-2 text-[10px]"
-              >
-                <CheckIcon className="h-3 w-3 mr-1" />
-                Save
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleCancelEdit}
-                className="h-6 px-2 text-[10px]"
-              >
-                <XIcon className="h-3 w-3 mr-1" />
-                Cancel
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {/* Attachments */}
-            {message.attachments && message.attachments.length > 0 && (
+      {isUser ? (
+        /* User Message Layout */
+        <div className="flex flex-col items-end max-w-[70%]">
+          {/* Message Bubble */}
+          <div className="p-4 bg-gray-100 text-gray-900 rounded-2xl rounded-br-md">
+            {isEditing ? (
               <div className="space-y-2">
-                {message.attachments.map((attachment) => (
-                  <AttachmentDisplay key={attachment.id} attachment={attachment} />
-                ))}
+                <Textarea
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  className="min-h-[60px] resize-none border-gray-200 focus:border-gray-300"
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={handleSaveEdit}
+                    className="h-6 px-2 text-[10px]"
+                  >
+                    <CheckIcon className="h-3 w-3 mr-1" />
+                    Save
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleCancelEdit}
+                    className="h-6 px-2 text-[10px]"
+                  >
+                    <XIcon className="h-3 w-3 mr-1" />
+                    Cancel
+                  </Button>
+                </div>
               </div>
-            )}
+            ) : (
+              <div className="space-y-3">
+                {/* Attachments */}
+                {message.attachments && message.attachments.length > 0 && (
+                  <div className="space-y-2">
+                    {message.attachments.map((attachment) => (
+                      <AttachmentDisplay key={attachment.id} attachment={attachment} />
+                    ))}
+                  </div>
+                )}
 
-            {/* Message Content */}
-            {message.content && (
-              <div className={cn(
-                "message-content prose prose-sm max-w-none break-words text-xs",
-                isUser && "text-gray-900",
-                isAssistant && "dark:prose-invert text-foreground"
-              )}>
-                <MessageContent content={message.content} />
+                {/* Message Content */}
+                {message.content && (
+                  <div className="message-content prose prose-sm max-w-none break-words text-xs text-gray-900">
+                    <MessageContent content={message.content} />
+                  </div>
+                )}
               </div>
             )}
           </div>
-        )}
 
-        {/* Reserved space for action buttons - prevents layout shift */}
-        {isAssistant && (
-          <div className="flex items-center gap-1 mt-3 h-7">
-            <div className={cn(
-              "flex items-center gap-1 transition-opacity duration-200",
-              (isHovered || copied) ? "opacity-100" : "opacity-0"
-            )}>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn(
-                  "h-7 w-7 text-gray-400 hover:text-gray-600 rounded-md",
-                  isUser ? "hover:bg-white/80" : "hover:bg-gray-50"
-                )}
-                onClick={handleCopy}
-              >
-                {copied ? (
-                  <CheckIcon className="h-3.5 w-3.5 text-green-600" />
-                ) : (
-                  <CopyIcon className="h-3.5 w-3.5" />
-                )}
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn(
-                  "h-7 w-7 text-gray-400 hover:text-gray-600 rounded-md",
-                  isUser ? "hover:bg-white/80" : "hover:bg-gray-50"
-                )}
-              >
-                <ThumbsUpIcon className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn(
-                  "h-7 w-7 text-gray-400 hover:text-gray-600 rounded-md",
-                  isUser ? "hover:bg-white/80" : "hover:bg-gray-50"
-                )}
-              >
-                <ThumbsDownIcon className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn(
-                  "h-7 w-7 text-gray-400 hover:text-gray-600 rounded-md",
-                  isUser ? "hover:bg-white/80" : "hover:bg-gray-50"
-                )}
-                onClick={handleRegenerate}
-                title="Regenerate response"
-              >
-                <RefreshCwIcon className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Reserved space for user message actions - prevents layout shift */}
-        {isUser && (
-          <div className="flex items-center gap-1 mt-3 justify-end h-7">
+          {/* User Actions - Outside the bubble */}
+          <div className="flex items-center gap-1 mt-2 h-7">
             <div className={cn(
               "flex items-center gap-1 transition-opacity duration-200",
               isHovered ? "opacity-100" : "opacity-0"
@@ -200,10 +135,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className={cn(
-                  "h-7 w-7 text-gray-400 hover:text-gray-600 rounded-md",
-                  isUser ? "hover:bg-white/80" : "hover:bg-gray-50"
-                )}
+                className="h-7 w-7 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-50"
                 onClick={handleEdit}
                 title="Edit message"
               >
@@ -212,22 +144,79 @@ export function MessageBubble({ message }: MessageBubbleProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className={cn(
-                  "h-7 w-7 text-gray-400 hover:text-gray-600 rounded-md",
-                  isUser ? "hover:bg-white/80" : "hover:bg-gray-50"
-                )}
+                className="h-7 w-7 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-50"
                 onClick={handleCopy}
               >
                 {copied ? (
-                  <CheckIcon className="h-3.5 w-3.5 text-green-600" />
+                  <CheckIcon className="h-3.5 w-3.5" />
                 ) : (
                   <CopyIcon className="h-3.5 w-3.5" />
                 )}
               </Button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        /* Assistant Message Layout */
+        <div className="w-full">
+          {/* Message Content */}
+          <div className="p-4">
+            <div className="space-y-3">
+              {/* Attachments */}
+              {message.attachments && message.attachments.length > 0 && (
+                <div className="space-y-2">
+                  {message.attachments.map((attachment) => (
+                    <AttachmentDisplay key={attachment.id} attachment={attachment} />
+                  ))}
+                </div>
+              )}
+
+              {/* Message Content */}
+              {message.content ? (
+                <div className="message-content prose prose-sm max-w-none break-words text-xs dark:prose-invert text-foreground">
+                  <MessageContent content={message.content} />
+                </div>
+              ) : isLoading ? (
+                <div className="flex items-center">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          {/* Assistant Actions - Outside the content area */}
+          {message.content && (
+            <div className="flex items-center gap-1 px-4 h-7">
+              <div className={cn(
+                "flex items-center gap-1 transition-opacity duration-200",
+                (isHovered || copied) ? "opacity-100" : "opacity-0"
+              )}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-50"
+                  onClick={handleCopy}
+                >
+                  {copied ? (
+                    <CheckIcon className="h-3.5 w-3.5" />
+                  ) : (
+                    <CopyIcon className="h-3.5 w-3.5" />
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-50"
+                  onClick={handleRegenerate}
+                  title="Regenerate response"
+                >
+                  <RefreshCwIcon className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

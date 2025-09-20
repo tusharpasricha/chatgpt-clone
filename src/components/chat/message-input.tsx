@@ -111,7 +111,7 @@ export function MessageInput() {
               onKeyDown={handleKeyDown}
               placeholder="Ask anything"
               className={cn(
-                "min-h-[40px] max-h-[200px] resize-none border-0 bg-transparent p-2 focus-visible:ring-0 focus-visible:ring-offset-0 flex-1",
+                "min-h-[40px] max-h-[200px] resize-none shadow-none border-0 bg-transparent p-2 focus-visible:ring-0 focus-visible:ring-offset-0 flex-1",
                 "placeholder:text-muted-foreground text-foreground"
               )}
               rows={1}

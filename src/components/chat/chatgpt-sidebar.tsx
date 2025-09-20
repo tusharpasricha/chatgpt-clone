@@ -48,7 +48,7 @@ import { Input } from '@/components/ui/input';
 export function ChatGPTSidebar() {
   const { toggleSidebar, isMobile } = useSidebar();
   const { chats, activeChat, selectChat, createNewChat, deleteChat, updateChatTitle, isLoading, isLoadingChats } = useChat();
-  const { user } = useUser();
+  const { user, isLoaded: isUserLoaded } = useUser();
   const [isCreatingChat, setIsCreatingChat] = useState(false);
   const [chatToDelete, setChatToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -263,16 +263,31 @@ export function ChatGPTSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton className="text-gray-700 hover:bg-gray-100 justify-between cursor-pointer">
               <div className="flex items-center">
-                <UserButton
-                  appearance={{
-                    elements: {
-                      avatarBox: "h-8 w-8",
-                    },
-                  }}
-                />
-                <span className="ml-2">{`${user?.firstName} ${ user?.lastName}` || user?.emailAddresses[0]?.emailAddress || 'User'}</span>
+                {!isUserLoaded ? (
+                  <div className="animate-pulse bg-gray-300 h-8 w-8 rounded-full"></div>
+                ) : (
+                  <UserButton
+                    appearance={{
+                      elements: {
+                        avatarBox: "h-8 w-8",
+                      },
+                    }}
+                  />
+                )}
+                <div className="ml-2">
+                  {!isUserLoaded ? (
+                    <div className="animate-pulse bg-gray-300 h-4 w-20 rounded"></div>
+                  ) : (
+                    <span>
+                      {user?.firstName && user?.lastName
+                        ? `${user.firstName} ${user.lastName}`
+                        : user?.emailAddresses[0]?.emailAddress || 'User'
+                      }
+                    </span>
+                  )}
+                </div>
               </div>
-              
+
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

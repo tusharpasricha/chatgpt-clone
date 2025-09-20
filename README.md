@@ -8,9 +8,11 @@ A pixel-perfect ChatGPT clone built with Next.js 15, React 19, and the Vercel AI
 
 - 🤖 **Real AI Integration** - Powered by OpenAI GPT-4o-mini
 - 💬 **Streaming Responses** - Real-time message streaming
-- 💾 **Chat Persistence** - Conversations saved to localStorage
+- 🧠 **Advanced Memory** - Mem0-powered long-term memory and context
+- 💾 **Chat Persistence** - Conversations saved to MongoDB
 - 🎨 **Pixel-Perfect UI** - Matches original ChatGPT design
 - 📱 **Fully Responsive** - Works on desktop and mobile
+- 📎 **File Uploads** - Support for images and documents
 - ⚡ **Fast & Modern** - Built with Next.js 15 and React 19
 - 🔧 **TypeScript** - Full type safety throughout
 - 🎯 **Clean Architecture** - Well-organized, maintainable code
@@ -21,6 +23,10 @@ A pixel-perfect ChatGPT clone built with Next.js 15, React 19, and the Vercel AI
 
 - Node.js 18+
 - OpenAI API key
+- MongoDB database (Atlas recommended)
+- Clerk account for authentication
+- Mem0 API key (optional, for advanced memory features)
+- Uploadcare account (optional, for file uploads)
 
 ### Installation
 
@@ -40,9 +46,18 @@ A pixel-perfect ChatGPT clone built with Next.js 15, React 19, and the Vercel AI
    cp .env.local.example .env.local
    ```
 
-   Edit `.env.local` and add your OpenAI API key:
+   Edit `.env.local` and add your API keys:
    ```env
+   # Required
    OPENAI_API_KEY=your_openai_api_key_here
+   MONGODB_URI=your_mongodb_connection_string
+   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
+   CLERK_SECRET_KEY=your_clerk_secret_key
+
+   # Optional (for advanced features)
+   MEM0_API_KEY=your_mem0_api_key_here
+   NEXT_PUBLIC_UPLOADCARE_PUBLIC_KEY=your_uploadcare_public_key
+   UPLOADCARE_SECRET_KEY=your_uploadcare_secret_key
    ```
 
 4. **Run the development server**
@@ -61,13 +76,44 @@ A pixel-perfect ChatGPT clone built with Next.js 15, React 19, and the Vercel AI
 - **Styling**: Tailwind CSS
 - **UI Components**: shadcn/ui
 - **AI Integration**: Vercel AI SDK + OpenAI
+- **Memory System**: Mem0 for advanced memory management
+- **Database**: MongoDB with Mongoose
+- **Authentication**: Clerk
+- **File Storage**: Uploadcare
 - **State Management**: React Context + useReducer
 - **Icons**: Lucide React
 
-### Project Structure
+## 🧠 Advanced Memory Features
+
+This ChatGPT clone includes sophisticated memory capabilities powered by **Mem0**:
+
+### **Automatic Memory Creation**
+- **User Preferences**: Remembers your likes, dislikes, and choices
+- **Personal Information**: Stores important details about you
+- **Behavioral Patterns**: Learns your habits and tendencies
+- **Factual Knowledge**: Retains important facts you share
+- **Conversation Context**: Maintains context across sessions
+
+### **Memory Management**
+- **Smart Categorization**: Automatically organizes memories by type
+- **Relevance Scoring**: Prioritizes important memories
+- **Search & Filter**: Find specific memories easily
+- **Manual Control**: Add, edit, or delete memories as needed
+- **Privacy Controls**: Full control over your memory data
+
+### **Enhanced Conversations**
+- **Personalized Responses**: AI adapts to your preferences
+- **Context Continuity**: Seamless conversation flow across sessions
+- **Learning Over Time**: Gets better at understanding you
+- **Intelligent Recall**: Brings up relevant memories when needed
+
+For detailed setup and usage instructions, see [MEM0_INTEGRATION.md](./MEM0_INTEGRATION.md).
+
+## 📚 Documentation
 
 - [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
 - [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- [Mem0 Integration Guide](./MEM0_INTEGRATION.md) - detailed memory system documentation.
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 

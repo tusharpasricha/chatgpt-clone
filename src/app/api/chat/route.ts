@@ -2,6 +2,9 @@ import { openai } from '@ai-sdk/openai';
 import { streamText } from 'ai';
 import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { enhancedContextManager } from '@/lib/memory/enhanced-context-manager';
+import { Message } from '@/types';
+
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -17,11 +20,25 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { messages } = await req.json();
+    const { messages, chatId } = await req.json();
 
     // Validate messages
     if (!messages || !Array.isArray(messages)) {
       return new Response('Invalid messages format', { status: 400 });
+    }
+
+    // Process the latest user message for memory extraction (server-side)
+    if (enhancedContextManager.isMemoryAvailable() && chatId) {
+      const latestMessage = messages[messages.length - 1];
+      if (latestMessage && latestMessage.role === 'user') {
+        try {
+          await enhancedContextManager.processNewMessage(latestMessage as Message, userId, chatId);
+          console.log('Memory extraction completed for message');
+        } catch (error) {
+          console.error('Memory extraction failed:', error);
+          // Don't fail the chat request if memory extraction fails
+        }
+      }
     }
 
     // Convert messages to OpenAI SDK format with vision support

@@ -5,7 +5,21 @@ if (!process.env.MONGODB_URI) {
 }
 
 const uri = process.env.MONGODB_URI;
-const options = {};
+const options = {
+  // SSL/TLS configuration for MongoDB Atlas
+  tls: true,
+  tlsAllowInvalidCertificates: false,
+  tlsAllowInvalidHostnames: false,
+  // Connection pool settings
+  maxPoolSize: 10,
+  minPoolSize: 5,
+  maxIdleTimeMS: 30000,
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+  // Retry settings
+  retryWrites: true,
+  retryReads: true,
+};
 
 let client: MongoClient;
 let clientPromise: Promise<MongoClient>;

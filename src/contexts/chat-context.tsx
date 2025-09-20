@@ -400,11 +400,14 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'SET_ERROR', payload: null });
 
     try {
-      // Prepare messages for API with context management
+      // Prepare messages for API with enhanced memory context management
       const allMessages = [...currentChat.messages, userMessage];
+
+      // Use original context manager for client-side message preparation
+      // Memory processing will happen on the server side
       const messagesForAPI = await prepareMessagesForAPI(
         allMessages,
-        undefined, // No system prompt for now
+        undefined,
         {
           maxTokens: 4000,
           reserveTokensForResponse: 1000,
@@ -420,7 +423,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: messagesForAPI
+          messages: messagesForAPI,
+          chatId: currentChat.id
         }),
       });
 
@@ -581,7 +585,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: messagesForAPI
+          messages: messagesForAPI,
+          chatId: state.activeChat!.id
         }),
       });
 
@@ -688,7 +693,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: messagesForAPI
+          messages: messagesForAPI,
+          chatId: state.activeChat!.id
         }),
       });
 

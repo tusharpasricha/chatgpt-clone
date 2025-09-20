@@ -23,10 +23,12 @@ import {
   MoreHorizontal,
   Trash2Icon,
   EditIcon,
+  Brain,
 } from 'lucide-react';
 import { useChat } from '@/contexts/chat-context';
 import { useState } from 'react';
 import { useUser, UserButton } from '@clerk/nextjs';
+import { MemoryManagerDialog } from '@/components/memory/memory-manager-dialog';
 import { Button } from '@/components/ui/button';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import {
@@ -54,6 +56,7 @@ export function ChatGPTSidebar() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [chatToRename, setChatToRename] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState('');
+  const [isMemoryManagerOpen, setIsMemoryManagerOpen] = useState(false);
 
   const handleDeleteClick = (chatId: string) => {
     setChatToDelete(chatId);
@@ -155,6 +158,21 @@ export function ChatGPTSidebar() {
         >
           <PenSquareIcon className={`h-4 w-4 ${isCreatingChat ? 'animate-spin' : ''}`} />
           <span>{isCreatingChat ? 'Creating...' : 'New chat'}</span>
+        </SidebarMenuButton>
+
+        {/* Memory Manager Button */}
+        <SidebarMenuButton
+          className="w-full justify-start text-gray-700 hover:bg-gray-100 h-10 cursor-pointer"
+          tooltip="Memory Manager"
+          onClick={() => {
+            setIsMemoryManagerOpen(true);
+            if (isMobile) {
+              toggleSidebar();
+            }
+          }}
+        >
+          <Brain className="h-4 w-4" />
+          <span>Memory</span>
         </SidebarMenuButton>
 
 
@@ -344,6 +362,12 @@ export function ChatGPTSidebar() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Memory Manager Dialog */}
+      <MemoryManagerDialog
+        open={isMemoryManagerOpen}
+        onOpenChange={setIsMemoryManagerOpen}
+      />
     </>
   );
 }

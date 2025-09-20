@@ -20,6 +20,7 @@ export interface Attachment {
   url: string;
   size: number;
   mimeType: string;
+  uploadcareUuid?: string; // Optional for backward compatibility
 }
 
 export interface Chat {

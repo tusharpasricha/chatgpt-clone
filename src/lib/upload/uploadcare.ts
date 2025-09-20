@@ -128,6 +128,48 @@ export function uploadcareFileToAttachment(file: UploadcareFile): {
 }
 
 /**
+ * Get supported file types for Uploadcare
+ */
+export const SUPPORTED_FILE_TYPES = {
+  images: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+  documents: [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  ],
+  text: ['text/plain', 'text/csv', 'application/json'],
+} as const;
+
+export const ALL_SUPPORTED_TYPES = [
+  ...SUPPORTED_FILE_TYPES.images,
+  ...SUPPORTED_FILE_TYPES.documents,
+  ...SUPPORTED_FILE_TYPES.text,
+] as const;
+
+/**
+ * Check if file type is supported
+ */
+export function isSupportedFileType(mimeType: string): boolean {
+  return ALL_SUPPORTED_TYPES.includes(mimeType as any);
+}
+
+/**
+ * Get file category from mime type
+ */
+export function getFileCategory(mimeType: string): 'image' | 'document' | 'text' | 'unknown' {
+  if (SUPPORTED_FILE_TYPES.images.includes(mimeType as any)) {
+    return 'image';
+  }
+  if (SUPPORTED_FILE_TYPES.documents.includes(mimeType as any)) {
+    return 'document';
+  }
+  if (SUPPORTED_FILE_TYPES.text.includes(mimeType as any)) {
+    return 'text';
+  }
+  return 'unknown';
+}
+
+/**
  * Get optimized image URL from Uploadcare
  */
 export function getOptimizedUploadcareUrl(

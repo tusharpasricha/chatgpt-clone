@@ -122,7 +122,6 @@ This implementation follows Galaxy.ai's core values:
 - **Hosting**: Vercel (mandatory)
 - **Linting**: ESLint + Prettier
 - **Type Checking**: TypeScript strict mode
-- **Testing**: Jest + React Testing Library
 
 ## 📁 Project Structure
 

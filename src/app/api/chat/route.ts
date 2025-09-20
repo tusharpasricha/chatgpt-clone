@@ -41,6 +41,23 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Enhance conversation with relevant memories
+    let memoryContext = '';
+    if (enhancedContextManager.isMemoryAvailable()) {
+      const latestMessage = messages[messages.length - 1];
+      if (latestMessage && latestMessage.role === 'user') {
+        try {
+          memoryContext = await enhancedContextManager.enhanceConversationContext(userId, latestMessage.content);
+          if (memoryContext) {
+            console.log('Enhanced conversation with memory context');
+          }
+        } catch (error) {
+          console.error('Memory context enhancement failed:', error);
+          // Don't fail the chat request if memory enhancement fails
+        }
+      }
+    }
+
     // Convert messages to OpenAI SDK format with vision support
     const openaiMessages = messages.map((msg: {
       role: 'user' | 'assistant' | 'system';
@@ -108,11 +125,21 @@ export async function POST(req: NextRequest) {
       };
     });
 
+    // Add system message with memory context if available
+    const systemMessage = memoryContext
+      ? `You are a helpful AI assistant. ${memoryContext}`
+      : 'You are a helpful AI assistant.';
+
+    const messagesWithSystem = [
+      { role: 'system' as const, content: systemMessage },
+      ...openaiMessages
+    ];
+
     // Create the AI stream
     const result = streamText({
       model: openai('gpt-4o'), // Using GPT-4o for vision support
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      messages: openaiMessages as any, // Type assertion needed for vision messages
+      messages: messagesWithSystem as any, // Type assertion needed for vision messages
       temperature: 0.7,
     });
 

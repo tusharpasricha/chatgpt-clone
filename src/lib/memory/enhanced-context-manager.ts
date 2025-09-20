@@ -281,6 +281,54 @@ export class EnhancedContextManager {
   }
 
   /**
+   * Get relevant memories for enhancing conversation context
+   */
+  async getRelevantMemories(userId: string, query: string, limit: number = 5): Promise<string[]> {
+    if (!this.isMemoryAvailable()) {
+      return [];
+    }
+
+    try {
+      // Search for relevant memories based on the query
+      const memories = await mem0Service.searchMemories(query, userId, { limit });
+
+      // Format memories as context strings
+      return memories.map(memory => memory.content);
+    } catch (error) {
+      console.error('Error getting relevant memories:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Enhance conversation context with relevant memories
+   */
+  async enhanceConversationContext(userId: string, userMessage: string): Promise<string> {
+    if (!this.isMemoryAvailable()) {
+      return '';
+    }
+
+    try {
+      // Get relevant memories for the user's message
+      const relevantMemories = await this.getRelevantMemories(userId, userMessage, 3);
+
+      if (relevantMemories.length === 0) {
+        return '';
+      }
+
+      // Format memories as context
+      const memoryContext = relevantMemories
+        .map(memory => `- ${memory}`)
+        .join('\n');
+
+      return `\n\nRelevant information about the user:\n${memoryContext}`;
+    } catch (error) {
+      console.error('Error enhancing conversation context:', error);
+      return '';
+    }
+  }
+
+  /**
    * Check if memory service is available
    */
   isMemoryAvailable(): boolean {

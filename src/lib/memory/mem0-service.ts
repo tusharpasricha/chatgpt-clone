@@ -128,27 +128,30 @@ export class Mem0Service {
     } = options;
 
     try {
-      const filters = {
-        user_id: this.getSimplifiedUserId(userId),
-        ...(memoryTypes && memoryTypes.length > 0 ? {
-          categories: { in: memoryTypes }
-        } : {})
+      const simplifiedUserId = this.getSimplifiedUserId(userId);
+
+      const requestBody = {
+        query,
+        user_id: simplifiedUserId,
+        limit: limit,
+        filters: {
+          user_id: simplifiedUserId,
+          ...(memoryTypes && memoryTypes.length > 0 ? {
+            categories: { in: memoryTypes }
+          } : {})
+        }
       };
 
-      // Use direct HTTP API call for consistency
+      console.log('Searching memories with request:', JSON.stringify(requestBody, null, 2));
+
+      // Use POST request with correct format
       const response = await fetch('https://api.mem0.ai/v1/memories/search/', {
         method: 'POST',
         headers: {
           'Authorization': `Token ${process.env.MEM0_API_KEY}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          query,
-          version: 'v2',
-          filters,
-          top_k: limit,
-          threshold: minRelevance
-        })
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {

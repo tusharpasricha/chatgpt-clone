@@ -1,5 +1,5 @@
 import { getDatabase } from './mongodb';
-import { DbChat, Chat, Message, dbChatToChat, chatToDbChat, messageToDbMessage } from './models';
+import { DbChat, DbMessage, Chat, Message, dbChatToChat, chatToDbChat, messageToDbMessage } from './models';
 import { Collection } from 'mongodb';
 
 export class ChatService {
@@ -35,8 +35,8 @@ export class ChatService {
 
   async updateChat(chatId: string, userId: string, updates: Partial<Chat>): Promise<Chat | null> {
     const collection = await this.getChatsCollection();
-    
-    const updateDoc: { updatedAt: Date; title?: string; messages?: Array<{ id: string; role: string; content: string; timestamp: Date; attachments?: unknown[] }>; isActive?: boolean } = {
+
+    const updateDoc: { updatedAt: Date; title?: string; messages?: DbMessage[]; isActive?: boolean } = {
       updatedAt: new Date(),
     };
 

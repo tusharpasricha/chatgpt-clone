@@ -28,7 +28,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
   const [copied, setCopied] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(message.content);
-  const { updateMessage, regenerateResponse } = useChat();
+  const { regenerateResponse, editMessageAndRegenerate } = useChat();
 
   const handleCopy = async () => {
     try {
@@ -47,7 +47,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
 
   const handleSaveEdit = async () => {
     if (editContent.trim() !== message.content) {
-      await updateMessage(message.id, editContent.trim());
+      await editMessageAndRegenerate(message.id, editContent.trim());
     }
     setIsEditing(false);
   };

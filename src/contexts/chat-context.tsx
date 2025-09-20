@@ -22,6 +22,7 @@ type ChatAction =
   | { type: 'ADD_MESSAGE'; payload: { chatId: string; message: Message } }
   | { type: 'UPDATE_MESSAGE'; payload: { chatId: string; messageId: string; updates: Partial<Message> } }
   | { type: 'TRUNCATE_MESSAGES'; payload: { chatId: string; fromMessageId: string } }
+  | { type: 'EDIT_MESSAGE_AND_REGENERATE'; payload: { chatId: string; messageId: string; newContent: string } }
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_LOADING_CHATS'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null };
@@ -126,9 +127,34 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
     case 'SET_LOADING_CHATS':
       return { ...state, isLoadingChats: action.payload };
 
+    case 'TRUNCATE_MESSAGES':
+      return {
+        ...state,
+        chats: state.chats.map(chat =>
+          chat.id === action.payload.chatId
+            ? {
+                ...chat,
+                messages: chat.messages.slice(0, chat.messages.findIndex(msg => msg.id === action.payload.fromMessageId) + 1),
+                updatedAt: new Date()
+              }
+            : chat
+        ),
+        activeChat: state.activeChat?.id === action.payload.chatId
+          ? {
+              ...state.activeChat,
+              messages: state.activeChat.messages.slice(0, state.activeChat.messages.findIndex(msg => msg.id === action.payload.fromMessageId) + 1),
+              updatedAt: new Date()
+            }
+          : state.activeChat
+      };
+
+    case 'EDIT_MESSAGE_AND_REGENERATE':
+      // This will be handled by a separate function
+      return state;
+
     case 'SET_ERROR':
       return { ...state, error: action.payload };
-    
+
     default:
       return state;
   }
@@ -142,6 +168,7 @@ interface ChatContextType extends ChatState {
   regenerateResponse: (messageId: string) => Promise<void>;
   updateChatTitle: (chatId: string, title: string) => Promise<void>;
   updateMessage: (messageId: string, content: string) => Promise<void>;
+  editMessageAndRegenerate: (messageId: string, newContent: string) => Promise<void>;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -603,6 +630,142 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     }
   }, [state.activeChat]);
 
+  const editMessageAndRegenerate = useCallback(async (messageId: string, newContent: string) => {
+    if (!state.activeChat) return;
+
+    const messageIndex = state.activeChat.messages.findIndex(msg => msg.id === messageId);
+    if (messageIndex === -1 || state.activeChat.messages[messageIndex]?.role !== 'user') return;
+
+    // Calculate the truncated messages locally (up to and including the edited message)
+    const truncatedMessages = state.activeChat.messages.slice(0, messageIndex + 1);
+
+    // Update the edited message content in the truncated messages
+    const updatedMessages = truncatedMessages.map(msg =>
+      msg.id === messageId ? { ...msg, content: newContent } : msg
+    );
+
+    // Update the chat with truncated messages
+    dispatch({
+      type: 'UPDATE_CHAT',
+      payload: {
+        id: state.activeChat.id,
+        updates: {
+          messages: updatedMessages,
+          updatedAt: new Date()
+        }
+      }
+    });
+
+    // Add a new assistant message placeholder
+    const assistantMessage: Message = {
+      id: `msg-${Date.now()}`,
+      content: '',
+      role: 'assistant',
+      timestamp: new Date(),
+    };
+
+    dispatch({
+      type: 'ADD_MESSAGE',
+      payload: { chatId: state.activeChat.id, message: assistantMessage }
+    });
+
+    dispatch({ type: 'SET_LOADING', payload: true });
+    dispatch({ type: 'SET_ERROR', payload: null });
+
+    try {
+      // Prepare messages for API with context management
+      const messagesForAPI = await prepareMessagesForAPI(
+        [...updatedMessages, assistantMessage],
+        undefined,
+        {
+          maxTokens: 4000,
+          reserveTokensForResponse: 1000,
+          model: 'gpt-3.5-turbo',
+        }
+      );
+
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: messagesForAPI
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('No response body');
+
+      let assistantContent = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = new TextDecoder().decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('0:')) {
+            try {
+              const data = JSON.parse(line.slice(2));
+              if (data.type === 'text-delta') {
+                assistantContent += data.textDelta;
+                dispatch({
+                  type: 'UPDATE_MESSAGE',
+                  payload: {
+                    chatId: state.activeChat.id,
+                    messageId: assistantMessage.id,
+                    updates: { content: assistantContent }
+                  }
+                });
+              }
+            } catch {
+              // Ignore parsing errors for partial chunks
+            }
+          }
+        }
+      }
+
+      // Save the updated conversation to database
+      if (assistantContent) {
+        try {
+          const finalChat = state.chats.find(chat => chat.id === state.activeChat!.id);
+          if (finalChat) {
+            await fetch(`/api/chats/${state.activeChat!.id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                messages: finalChat.messages
+              }),
+            });
+          }
+        } catch (error) {
+          console.error('Failed to save edited conversation:', error);
+        }
+      }
+    } catch (error) {
+      console.error('Edit and regenerate error:', error);
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to regenerate response after edit. Please try again.' });
+
+      // Remove the empty assistant message on error
+      dispatch({
+        type: 'UPDATE_CHAT',
+        payload: {
+          id: state.activeChat.id,
+          updates: {
+            messages: state.activeChat.messages.filter(msg => msg.id !== assistantMessage.id)
+          }
+        }
+      });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  }, [state.activeChat, state.chats]);
+
   const contextValue: ChatContextType = {
     ...state,
     createNewChat,
@@ -612,6 +775,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     regenerateResponse,
     updateChatTitle,
     updateMessage,
+    editMessageAndRegenerate,
   };
 
   return (

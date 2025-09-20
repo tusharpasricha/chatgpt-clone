@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useChat } from '@/contexts/chat-context';
 import { UploadcareFileUpload } from './uploadcare-file-upload';
 import { FilePreview } from './file-preview';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils/utils';
 import { Attachment } from '@/types';
 import {
   SendIcon

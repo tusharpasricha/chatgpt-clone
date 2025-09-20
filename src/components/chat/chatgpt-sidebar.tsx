@@ -15,7 +15,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils/utils';
 import {
   PenSquareIcon,
   MessageSquareIcon,
@@ -136,46 +136,44 @@ export function ChatGPTSidebar() {
           </SidebarMenuButton>
         </div>
 
-        {/* New Chat Button */}
-        <SidebarMenuButton
-          className="w-full justify-start text-gray-700 hover:bg-gray-100 h-10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          tooltip="New chat"
-          disabled={isCreatingChat || isLoading}
-          onClick={() => {
-            try {
-              setIsCreatingChat(true);
-              createNewChat();
-              // On mobile, close sidebar after action
+        {/* Action Buttons */}
+        <div className="space-y-1">
+          <SidebarMenuButton
+            className="w-full justify-start text-gray-700 hover:bg-gray-100 h-8 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            tooltip="New chat"
+            disabled={isCreatingChat || isLoading}
+            onClick={() => {
+              try {
+                setIsCreatingChat(true);
+                createNewChat();
+                // On mobile, close sidebar after action
+                if (isMobile) {
+                  toggleSidebar();
+                }
+              } catch (error) {
+                console.error('Failed to create new chat:', error);
+              } finally {
+                setIsCreatingChat(false);
+              }
+            }}
+          >
+            <PenSquareIcon className={`h-4 w-4 ${isCreatingChat ? 'animate-spin' : ''}`} />
+            <span>{isCreatingChat ? 'Creating...' : 'New chat'}</span>
+          </SidebarMenuButton>
+          <SidebarMenuButton
+            className="w-full justify-start text-gray-700 hover:bg-gray-100 h-8 cursor-pointer"
+            tooltip="Memory Manager"
+            onClick={() => {
+              setIsMemoryManagerOpen(true);
               if (isMobile) {
                 toggleSidebar();
               }
-            } catch (error) {
-              console.error('Failed to create new chat:', error);
-            } finally {
-              setIsCreatingChat(false);
-            }
-          }}
-        >
-          <PenSquareIcon className={`h-4 w-4 ${isCreatingChat ? 'animate-spin' : ''}`} />
-          <span>{isCreatingChat ? 'Creating...' : 'New chat'}</span>
-        </SidebarMenuButton>
-
-        {/* Memory Manager Button */}
-        <SidebarMenuButton
-          className="w-full justify-start text-gray-700 hover:bg-gray-100 h-10 cursor-pointer"
-          tooltip="Memory Manager"
-          onClick={() => {
-            setIsMemoryManagerOpen(true);
-            if (isMobile) {
-              toggleSidebar();
-            }
-          }}
-        >
-          <Brain className="h-4 w-4" />
-          <span>Memory</span>
-        </SidebarMenuButton>
-
-
+            }}
+          >
+            <Brain className="h-4 w-4" />
+            <span>Memory</span>
+          </SidebarMenuButton>
+        </div>
       </SidebarHeader>
 
       <SidebarContent>

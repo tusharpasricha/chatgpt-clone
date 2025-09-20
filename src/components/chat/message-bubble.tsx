@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useChat } from '@/contexts/chat-context';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils/utils';
 import { type Message } from '@/types';
 import {
   CopyIcon,

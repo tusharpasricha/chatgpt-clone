@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { XIcon, FileIcon, ImageIcon, LoaderIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils/utils';
 import { Attachment } from '@/types';
 
 interface UploadingFile {

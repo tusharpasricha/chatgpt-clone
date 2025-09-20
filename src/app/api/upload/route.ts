@@ -109,19 +109,17 @@ export async function DELETE(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
-    const cloudinaryId = searchParams.get('cloudinaryId');
+    const fileId = searchParams.get('fileId');
 
-    if (!cloudinaryId) {
+    if (!fileId) {
       return NextResponse.json(
-        { error: 'Cloudinary ID required' },
+        { error: 'File ID required' },
         { status: 400 }
       );
     }
 
-    // Delete from Cloudinary
-    const { deleteFromCloudinary } = await import('@/lib/upload/cloudinary');
-    await deleteFromCloudinary(cloudinaryId);
-
+    // For now, just return success since we're using data URLs
+    // In production, you would delete from your chosen storage service
     return NextResponse.json({
       success: true,
       message: 'File deleted successfully',

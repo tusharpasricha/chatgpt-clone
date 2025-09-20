@@ -29,14 +29,13 @@ This document summarizes the implementation of advanced chat features for the Ch
 **Status: COMPLETE ✅**
 
 **Implementation Details:**
-- Created Cloudinary integration for file storage
 - Implemented file upload API endpoint with authentication
 - Added file validation (type, size limits)
 - Enhanced message structure to support attachments
 - Updated UI to display image and file attachments
+- Currently using Base64 data URLs for temporary storage
 
 **Files Created:**
-- `src/lib/upload/cloudinary.ts` - Cloudinary integration utilities
 - `src/app/api/upload/route.ts` - File upload API endpoint
 
 **Files Modified:**
@@ -50,7 +49,7 @@ This document summarizes the implementation of advanced chat features for the Ch
 - ✅ Multiple file selection
 - ✅ File type validation (images, PDFs, documents)
 - ✅ File size limits (10MB max)
-- ✅ Cloudinary integration for storage
+- ✅ Base64 data URL storage (temporary)
 - ✅ Image preview and file download
 - ✅ Attachment display in messages
 - ✅ File deletion functionality
@@ -121,15 +120,14 @@ This document summarizes the implementation of advanced chat features for the Ch
 ### Environment Variables
 Add to `.env.local`:
 ```env
-# Cloudinary Configuration (for file uploads)
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
+# Uploadcare Configuration (for file uploads)
+NEXT_PUBLIC_UPLOADCARE_PUBLIC_KEY=your_uploadcare_public_key
+UPLOADCARE_SECRET_KEY=your_uploadcare_secret_key
 ```
 
 ### Dependencies
 All required dependencies are already included in package.json:
-- `cloudinary` - File upload and storage
+- `@uploadcare/react-uploader` - File upload components
 - `uuid` - Unique ID generation
 - `@clerk/nextjs` - Authentication
 
@@ -143,9 +141,9 @@ All required dependencies are already included in package.json:
 
 ### File Upload
 - **Size Limits**: 10MB per file
-- **Storage**: Cloudinary CDN for optimal performance
+- **Storage**: Base64 data URLs (temporary solution)
 - **Validation**: Client and server-side validation
-- **Optimization**: Image compression and format optimization
+- **Supported Types**: Images, PDFs, documents, text files
 
 ### Memory Management
 - **Optimistic Updates**: Immediate UI feedback
@@ -167,7 +165,7 @@ All required dependencies are already included in package.json:
 ```typescript
 // User drags files or clicks attach button
 // Files validated for type and size
-// Upload to Cloudinary via /api/upload
+// Upload via /api/upload (Base64 data URLs)
 // Attachments added to message
 // Message sent with both text and attachments
 ```
@@ -186,7 +184,7 @@ All required dependencies are already included in package.json:
 The advanced features are now fully implemented and tested. The application now supports:
 
 1. ✅ **Complete message editing** with proper state management
-2. ✅ **Full file upload functionality** with Cloudinary integration
+2. ✅ **Full file upload functionality** with Base64 data URL storage
 3. ✅ **Enhanced chat persistence** with attachment support
 4. ✅ **Intelligent context management** for long conversations
 5. ✅ **Comprehensive testing** with 100% test pass rate

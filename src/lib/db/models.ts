@@ -8,7 +8,7 @@ export interface DbAttachment {
   url: string;
   size: number;
   mimeType: string;
-  cloudinaryId?: string; // For Cloudinary integration
+  uploadId?: string; // For cloud storage integration
 }
 
 export interface DbMessage {

@@ -8,7 +8,7 @@ This guide provides a comprehensive roadmap for building a pixel-perfect ChatGPT
 - **Pixel-perfect UI/UX** matching ChatGPT exactly using v0.dev
 - **Vercel AI SDK integration** for chat responses
 - **Advanced chat memory** with MongoDB persistence
-- **File & image upload support** via Uploadcare + Cloudinary
+- **File & image upload support** via Uploadcare
 - **Message editing & regeneration** with seamless UX
 - **Long-context handling** with smart context window management
 - **Mobile responsiveness** and accessibility compliance
@@ -32,7 +32,7 @@ This implementation follows Galaxy.ai's core values:
 │                 │    │                 │    │                 │
 │ • v0.dev UI     │    │ • Chat API      │    │ • Vercel AI SDK │
 │ • ShadCN/UI     │    │ • File Upload   │    │ • MongoDB       │
-│ • TailwindCSS   │    │ • Clerk Auth    │    │ • Cloudinary    │
+│ • TailwindCSS   │    │ • Clerk Auth    │    │ • Uploadcare    │
 │ • TypeScript    │    │ • Context Mgmt  │    │ • Uploadcare    │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
@@ -84,7 +84,7 @@ This implementation follows Galaxy.ai's core values:
 
 ### Phase 5: Backend & Integration
 - [ ] MongoDB integration
-- [ ] Cloudinary file storage
+- [ ] Uploadcare file storage
 - [ ] API endpoint development
 - [ ] Webhook support
 
@@ -112,7 +112,7 @@ This implementation follows Galaxy.ai's core values:
 ### Backend & Database
 - **API**: Next.js API Routes
 - **Database**: MongoDB with Mongoose (mandatory)
-- **File Storage**: Cloudinary (mandatory)
+- **File Storage**: Uploadcare (optional)
 - **File Upload**: Uploadcare front-end components (mandatory)
 - **Authentication**: Clerk (mandatory)
 - **AI Integration**: Vercel AI SDK
@@ -162,7 +162,7 @@ chatgpt-clone/
 - npm
 - Cursor AI editor installed
 - MongoDB database (Atlas recommended)
-- Cloudinary account
+- Uploadcare account (optional)
 - Uploadcare account
 - Clerk account for authentication
 - OpenAI API key
@@ -179,9 +179,6 @@ VERCEL_AI_SDK_API_KEY=your_vercel_ai_key
 MONGODB_URI=your_mongodb_connection_string
 
 # File Upload & Storage
-CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
-CLOUDINARY_API_KEY=your_cloudinary_api_key
-CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 UPLOADCARE_PUBLIC_KEY=your_uploadcare_public_key
 UPLOADCARE_SECRET_KEY=your_uploadcare_secret_key
 

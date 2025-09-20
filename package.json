@@ -26,7 +26,6 @@
     "@uploadcare/react-uploader": "^1.10.2",
     "ai": "^5.0.44",
     "class-variance-authority": "^0.7.1",
-    "cloudinary": "^2.7.0",
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.13",
     "lucide-react": "^0.544.0",

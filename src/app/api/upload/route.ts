@@ -134,8 +134,8 @@ export async function POST(req: NextRequest) {
               // Truncate text to prevent token limit issues
               const truncatedText = truncateText(extractionResult.text, 8000);
 
-              (attachment as any).extractedText = truncatedText;
-              (attachment as any).extractionMetadata = {
+              (attachment as Record<string, unknown>).extractedText = truncatedText;
+              (attachment as Record<string, unknown>).extractionMetadata = {
                 pages: extractionResult.metadata?.pages,
                 title: extractionResult.metadata?.title,
                 author: extractionResult.metadata?.author,

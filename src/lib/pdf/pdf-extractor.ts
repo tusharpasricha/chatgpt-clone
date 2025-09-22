@@ -41,23 +41,43 @@ export async function extractPDFText(pdfUrl: string): Promise<PDFExtractionResul
     const PDFParser = (await import('pdf2json')).default;
 
     return new Promise((resolve) => {
-      const pdfParser = new (PDFParser as any)(null, 1);
+      const pdfParser = new (PDFParser as unknown as new (arg1: null, arg2: number) => {
+        on: (event: string, callback: (data: unknown) => void) => void;
+        parseBuffer: (buffer: Buffer) => void;
+      })(null, 1);
 
-      pdfParser.on('pdfParser_dataError', (errData: any) => {
-        console.error('PDF parsing error:', errData.parserError);
+      pdfParser.on('pdfParser_dataError', (errData: unknown) => {
+        const error = errData as { parserError: string };
+        console.error('PDF parsing error:', error.parserError);
         resolve({
           success: false,
-          error: `PDF parsing failed: ${errData.parserError}`
+          error: `PDF parsing failed: ${error.parserError}`
         });
       });
 
-      pdfParser.on('pdfParser_dataReady', (pdfData: any) => {
+      pdfParser.on('pdfParser_dataReady', (pdfData: unknown) => {
         try {
+          const data = pdfData as {
+            Pages?: Array<{
+              Texts?: Array<{
+                R?: Array<{ T?: string }>;
+              }>;
+            }>;
+            Meta?: {
+              Title?: string;
+              Author?: string;
+              Creator?: string;
+              Subject?: string;
+              Keywords?: string;
+              Producer?: string;
+            };
+          };
+
           // Extract text from all pages
           let fullText = '';
 
-          if (pdfData.Pages && Array.isArray(pdfData.Pages)) {
-            for (const page of pdfData.Pages) {
+          if (data.Pages && Array.isArray(data.Pages)) {
+            for (const page of data.Pages) {
               if (page.Texts && Array.isArray(page.Texts)) {
                 for (const textItem of page.Texts) {
                   if (textItem.R && Array.isArray(textItem.R)) {
@@ -75,7 +95,7 @@ export async function extractPDFText(pdfUrl: string): Promise<PDFExtractionResul
             }
           }
 
-          console.log(`PDF extraction successful. Pages: ${pdfData.Pages?.length || 0}, Text length: ${fullText.length}`);
+          console.log(`PDF extraction successful. Pages: ${data.Pages?.length || 0}, Text length: ${fullText.length}`);
 
           // Clean up the extracted text
           const cleanedText = cleanPDFText(fullText);
@@ -84,11 +104,11 @@ export async function extractPDFText(pdfUrl: string): Promise<PDFExtractionResul
             success: true,
             text: cleanedText,
             metadata: {
-              pages: pdfData.Pages?.length || 0,
-              title: pdfData.Meta?.Title,
-              author: pdfData.Meta?.Author,
-              creator: pdfData.Meta?.Creator,
-              producer: pdfData.Meta?.Producer,
+              pages: data.Pages?.length || 0,
+              title: data.Meta?.Title,
+              author: data.Meta?.Author,
+              creator: data.Meta?.Creator,
+              producer: data.Meta?.Producer,
             }
           });
         } catch (processingError) {

@@ -28,6 +28,7 @@ import {
 import { useChat } from '@/contexts/chat-context';
 import { useState } from 'react';
 import { useUser, UserButton } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
 import { MemoryManagerDialog } from '@/components/memory/memory-manager-dialog';
 import { Button } from '@/components/ui/button';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
@@ -49,8 +50,9 @@ import { Input } from '@/components/ui/input';
 
 export function ChatGPTSidebar() {
   const { toggleSidebar, isMobile } = useSidebar();
-  const { chats, activeChat, selectChat, createNewChat, deleteChat, updateChatTitle, isLoading, isLoadingChats } = useChat();
+  const { chats, activeChat, createNewChat, deleteChat, updateChatTitle, isLoading, isLoadingChats } = useChat();
   const { user, isLoaded: isUserLoaded } = useUser();
+  const router = useRouter();
   const [isCreatingChat, setIsCreatingChat] = useState(false);
   const [chatToDelete, setChatToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -212,7 +214,7 @@ export function ChatGPTSidebar() {
                               isTemporary && "opacity-75"
                             )}
                             onClick={() => {
-                              selectChat(chat.id);
+                              router.push(`/chat/${chat.id}`);
                               // On mobile, close sidebar after selecting a chat
                               if (isMobile) {
                                 toggleSidebar();

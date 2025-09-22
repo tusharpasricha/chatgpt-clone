@@ -1,7 +1,7 @@
 'use client';
 
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { ChatProvider, useChat } from '@/contexts/chat-context';
+import { useChat } from '@/contexts/chat-context';
 import { ChatGPTSidebar } from '@/components/chat/chatgpt-sidebar';
 import { ChatHeader } from '@/components/chat/chat-header';
 import { MessageList } from '@/components/chat/message-list';
@@ -64,16 +64,14 @@ function ChatContent() {
 
 export function ChatInterface() {
   return (
-    <ChatProvider>
-      <SidebarProvider defaultOpen={true}>
-        <div className="flex min-h-screen overflow-hidden w-full">
-          {/* Sidebar */}
-          <ChatGPTSidebar />
+    <SidebarProvider defaultOpen={true}>
+      <div className="flex min-h-screen overflow-hidden w-full">
+        {/* Sidebar */}
+        <ChatGPTSidebar />
 
-          {/* Main Chat Area */}
-          <ChatContent />
-        </div>
-      </SidebarProvider>
-    </ChatProvider>
+        {/* Main Chat Area */}
+        <ChatContent />
+      </div>
+    </SidebarProvider>
   );
 }

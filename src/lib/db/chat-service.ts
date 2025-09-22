@@ -1,5 +1,6 @@
 import { getDatabase } from './mongodb';
 import { DbChat, DbMessage, Chat, Message, dbChatToChat, chatToDbChat, messageToDbMessage } from './models';
+import { uuidService } from './uuid-service';
 import { Collection } from 'mongodb';
 
 export class ChatService {
@@ -28,9 +29,38 @@ export class ChatService {
   async createChat(chat: Chat, userId: string): Promise<Chat> {
     const collection = await this.getChatsCollection();
     const dbChat = chatToDbChat(chat, userId);
-    
+
     await collection.insertOne(dbChat);
     return chat;
+  }
+
+  /**
+   * Create a new chat with a UUID
+   * @param title - The title of the chat
+   * @param userId - The user ID
+   * @returns The created chat with generated UUID
+   */
+  async createChatWithGeneratedId(title: string, userId: string): Promise<Chat> {
+    const chatId = uuidService.generateChatId();
+
+    const chat: Chat = {
+      id: chatId,
+      title: title || 'New Chat',
+      messages: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      isActive: true,
+    };
+
+    return this.createChat(chat, userId);
+  }
+
+  /**
+   * Generate a new message ID using UUID
+   * @returns A UUID message ID
+   */
+  generateMessageId(): string {
+    return uuidService.generateMessageId();
   }
 
   async updateChat(chatId: string, userId: string, updates: Partial<Chat>): Promise<Chat | null> {

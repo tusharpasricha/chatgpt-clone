@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useReducer, useCallback, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
 import { Message, Chat, Attachment } from '@/types';
 import { prepareMessagesForAPI, getContextStats } from '@/lib/chat/context-manager';
 
@@ -162,6 +163,7 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
 
 interface ChatContextType extends ChatState {
   createNewChat: () => void;
+  clearActiveChat: () => void;
   selectChat: (chatId: string) => void;
   deleteChat: (chatId: string) => Promise<void>;
   sendMessage: (content: string, attachments?: Attachment[]) => Promise<void>;
@@ -176,6 +178,7 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(chatReducer, initialState);
   const { user, isLoaded } = useUser();
+  const router = useRouter();
 
   // Load chats from API when user is authenticated
   useEffect(() => {
@@ -230,16 +233,29 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   }, [isLoaded, user]);
 
   const createNewChat = useCallback(() => {
-    // Simply clear the active chat to show welcome state
-    // The actual chat will be created when the user sends their first message
+    // Clear the active chat to show welcome state
     dispatch({ type: 'SET_ACTIVE_CHAT', payload: null });
+    // Navigate to the general chat page after state update
+    setTimeout(() => router.replace('/chat'), 0);
+  }, [router]);
+
+  const clearActiveChat = useCallback(() => {
+    // Clear the active chat to show welcome state without navigation
+    dispatch({ type: 'SET_ACTIVE_CHAT', payload: null });
+  }, []);
+
+  // Helper function to generate UUID message IDs
+  const generateMessageId = useCallback((): string => {
+    // Generate UUID directly on client side
+    return crypto.randomUUID();
   }, []);
 
   // Internal function to actually create a chat when needed
   const createActualChat = useCallback(async (): Promise<Chat> => {
     // Create optimistic chat immediately for better UX
+    // Use a temporary UUID that will be replaced with the server-generated one
     const optimisticChat: Chat = {
-      id: `temp-${Date.now()}`,
+      id: `temp-${crypto.randomUUID()}`,
       title: 'New Chat',
       messages: [],
       createdAt: new Date(),
@@ -273,16 +289,21 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         dispatch({ type: 'DELETE_CHAT', payload: optimisticChat.id });
         dispatch({ type: 'ADD_CHAT', payload: newChat });
         dispatch({ type: 'SET_ACTIVE_CHAT', payload: newChat });
+
+        // Navigate to the new chat URL
+        router.push(`/chat/${newChat.id}`);
+
         return newChat;
       } else {
         throw new Error('Failed to create chat');
       }
     } catch (error) {
       console.error('Error creating chat:', error);
-      // Keep the optimistic chat as fallback, just update the ID
+      // Keep the optimistic chat as fallback with a UUID
+      // This will work offline but won't be persisted to the database
       const fallbackChat: Chat = {
         ...optimisticChat,
-        id: `chat-${Date.now()}` // Give it a proper ID
+        id: crypto.randomUUID() // Use UUID for consistency
       };
 
       // Replace temp chat with fallback chat
@@ -292,7 +313,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
       return fallbackChat;
     }
-  }, []);
+  }, [router]);
 
   const selectChat = useCallback((chatId: string) => {
     const chat = state.chats.find(c => c.id === chatId);
@@ -311,6 +332,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       if (response.ok) {
         // Remove from local state - the reducer will handle active chat selection
         dispatch({ type: 'DELETE_CHAT', payload: chatId });
+
+        // If we're currently on the deleted chat's URL, redirect to general chat page
+        if (typeof window !== 'undefined' && window.location.pathname === `/chat/${chatId}`) {
+          router.push('/chat');
+        }
       } else {
         const errorData = await response.json();
         console.error('Failed to delete chat:', response.status, errorData);
@@ -320,7 +346,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       console.error('Failed to delete chat:', error);
       dispatch({ type: 'SET_ERROR', payload: 'Failed to delete chat. Please try again.' });
     }
-  }, []);
+  }, [router]);
 
   const updateChatTitle = useCallback(async (chatId: string, title: string) => {
     dispatch({
@@ -350,9 +376,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       currentChat = await createActualChat();
     }
     
-    // Add user message
+    // Add user message with generated ID
+    const userMessageId = generateMessageId();
     const userMessage: Message = {
-      id: `msg-${Date.now()}`,
+      id: userMessageId,
       content,
       role: 'user',
       timestamp: new Date(),
@@ -383,9 +410,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       await updateChatTitle(currentChat.id, title);
     }
 
-    // Add assistant message placeholder
+    // Add assistant message placeholder with generated ID
+    const assistantMessageId = generateMessageId();
     const assistantMessage: Message = {
-      id: `msg-${Date.now() + 1}`,
+      id: assistantMessageId,
       content: '',
       role: 'assistant',
       timestamp: new Date(),
@@ -498,7 +526,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
-  }, [state.activeChat, createActualChat, updateChatTitle]);
+  }, [state.activeChat, createActualChat, updateChatTitle, generateMessageId]);
 
   const updateMessage = useCallback(async (messageId: string, content: string) => {
     if (!state.activeChat) return;
@@ -661,9 +689,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    // Add a new assistant message placeholder
+    // Add a new assistant message placeholder with generated ID
+    const assistantMessageId = generateMessageId();
     const assistantMessage: Message = {
-      id: `msg-${Date.now()}`,
+      id: assistantMessageId,
       content: '',
       role: 'assistant',
       timestamp: new Date(),
@@ -770,11 +799,12 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
-  }, [state.activeChat, state.chats]);
+  }, [state.activeChat, state.chats, generateMessageId]);
 
   const contextValue: ChatContextType = {
     ...state,
     createNewChat,
+    clearActiveChat,
     selectChat,
     deleteChat,
     sendMessage,

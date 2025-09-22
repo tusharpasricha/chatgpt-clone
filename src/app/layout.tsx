@@ -4,6 +4,7 @@ import { ClerkProvider, SignedIn, SignedOut } from '@clerk/nextjs';
 import "./globals.css";
 import { APP_CONFIG } from "@/constants";
 import { AutoSignIn } from "@/components/auth/auto-signin";
+import { ChatProvider } from "@/contexts/chat-context";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -55,9 +56,11 @@ export default function RootLayout({
             <AutoSignIn />
           </SignedOut>
           <SignedIn>
-            <div className="relative flex min-h-screen overflow-hidden">
-              {children}
-            </div>
+            <ChatProvider>
+              <div className="relative flex min-h-screen overflow-hidden">
+                {children}
+              </div>
+            </ChatProvider>
           </SignedIn>
         </body>
       </html>

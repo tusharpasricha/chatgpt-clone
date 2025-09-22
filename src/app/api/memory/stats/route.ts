@@ -3,12 +3,12 @@
  * Provides memory analytics and statistics
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { enhancedContextManager } from '@/lib/memory/enhanced-context-manager';
 
 // GET /api/memory/stats - Get memory statistics
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const { userId } = await auth();
 
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
 }
 
 // POST /api/memory/stats/cleanup - Clean up expired memories
-export async function POST(req: NextRequest) {
+export async function POST() {
   try {
     const { userId } = await auth();
 

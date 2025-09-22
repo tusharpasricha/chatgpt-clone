@@ -104,7 +104,11 @@ export function useMemory(): UseMemoryReturn {
       }
 
       // Refresh memories after adding
-      await refreshMemories();
+      const refreshResponse = await fetch('/api/memory');
+      if (refreshResponse.ok) {
+        const refreshData = await refreshResponse.json();
+        setMemories(refreshData.memories || []);
+      }
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add memory');
@@ -221,21 +225,37 @@ export function useMemory(): UseMemoryReturn {
       const data = await response.json();
       
       // Refresh memories and stats after cleanup
-      await Promise.all([refreshMemories(), refreshStats()]);
+      const [refreshResponse] = await Promise.all([
+        fetch('/api/memory'),
+        refreshStats()
+      ]);
+
+      if (refreshResponse.ok) {
+        const refreshData = await refreshResponse.json();
+        setMemories(refreshData.memories || []);
+      }
       
       return data.deletedCount || 0;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to cleanup memories');
       return 0;
     }
-  }, [user?.id, refreshMemories, refreshStats]);
+  }, [user?.id, refreshStats]);
 
   // Load initial data
   useEffect(() => {
     if (user?.id) {
-      Promise.all([refreshMemories(), refreshStats()]);
+      Promise.all([
+        fetch('/api/memory').then(async (response) => {
+          if (response.ok) {
+            const data = await response.json();
+            setMemories(data.memories || []);
+          }
+        }),
+        refreshStats()
+      ]);
     }
-  }, [user?.id, refreshMemories, refreshStats]);
+  }, [user?.id, refreshStats]);
 
   return {
     memories,

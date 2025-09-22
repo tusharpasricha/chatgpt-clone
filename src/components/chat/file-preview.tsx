@@ -2,8 +2,9 @@
 
 import { Button } from '@/components/ui/button';
 import { XIcon, FileIcon, ImageIcon, LoaderIcon } from 'lucide-react';
-import { cn } from '@/lib/utils/utils';
+// import { cn } from '@/lib/utils/utils';
 import { Attachment } from '@/types';
+import Image from 'next/image';
 
 interface UploadingFile {
   id: string;
@@ -35,10 +36,10 @@ export function FilePreview({
     return <FileIcon className="h-3 w-3 text-gray-500" />;
   };
 
-  const getFileTypeFromMimeType = (mimeType: string): string => {
-    if (mimeType.startsWith('image/')) return 'image';
-    return 'file';
-  };
+  // const getFileTypeFromMimeType = (mimeType: string): string => {
+  //   if (mimeType.startsWith('image/')) return 'image';
+  //   return 'file';
+  // };
 
   if (attachments.length === 0 && uploadingFiles.length === 0) {
     return null;
@@ -105,9 +106,11 @@ export function FilePreview({
         >
           {attachment.type === 'image' ? (
             <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
-              <img
+              <Image
                 src={attachment.url}
                 alt={attachment.name}
+                width={80}
+                height={80}
                 className="w-full h-full object-cover"
                 onError={(e) => {
                   // Fallback to file icon if image fails to load

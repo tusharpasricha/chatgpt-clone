@@ -3,12 +3,12 @@
  * Handles cleanup of expired memories
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { enhancedContextManager } from '@/lib/memory/enhanced-context-manager';
 
 // POST /api/memory/cleanup - Clean up expired memories
-export async function POST(req: NextRequest) {
+export async function POST() {
   try {
     const { userId } = await auth();
 

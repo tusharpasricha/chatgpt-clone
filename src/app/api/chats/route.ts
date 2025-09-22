@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { chatService } from '@/lib/db/chat-service';
-import { Chat } from '@/lib/db/models';
 
 // GET /api/chats - Get all chats for user
 export async function GET() {
@@ -41,17 +40,9 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const { title } = body;
-    
-    const newChat: Chat = {
-      id: `chat-${Date.now()}`,
-      title: title || 'New Chat',
-      messages: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      isActive: true,
-    };
-    
-    const createdChat = await chatService.createChat(newChat, userId);
+
+    // Use the new method that generates sequential IDs
+    const createdChat = await chatService.createChatWithGeneratedId(title, userId);
     
     return NextResponse.json({ chat: createdChat }, { status: 201 });
   } catch (error) {

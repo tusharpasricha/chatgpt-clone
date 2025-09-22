@@ -187,10 +187,11 @@ export async function prepareMessagesForAPI(
       content: message.content,
     };
     
-    // Handle attachments for vision models
+    // Handle attachments for vision models and file content
     if (message.attachments && message.attachments.length > 0) {
       const imageAttachments = message.attachments.filter(att => att.type === 'image');
-      
+      const fileAttachments = message.attachments.filter(att => att.type !== 'image');
+
       if (imageAttachments.length > 0) {
         // For vision models, format content as array using AI SDK format
         const contentArray = [];
@@ -208,7 +209,37 @@ export async function prepareMessagesForAPI(
           });
         });
 
+        // Add file content as text if any
+        if (fileAttachments.length > 0) {
+          const fileContent = fileAttachments.map(file => {
+            // If the file has extracted text (e.g., PDF), include it
+            if (file.extractedText) {
+              return `[File: ${file.name}]\n\nContent:\n${file.extractedText}`;
+            }
+            // Otherwise, just show the filename
+            return `[File: ${file.name}]`;
+          }).join('\n\n');
+
+          contentArray.push({
+            type: 'text',
+            text: fileContent
+          });
+        }
+
         apiMessage.content = contentArray;
+      } else if (fileAttachments.length > 0) {
+        // Only non-image files, handle with extracted content if available
+        const fileContent = fileAttachments.map(file => {
+          // If the file has extracted text (e.g., PDF), include it
+          if (file.extractedText) {
+            return `[File: ${file.name}]\n\nContent:\n${file.extractedText}`;
+          }
+          // Otherwise, just show the filename
+          return `[File: ${file.name}]`;
+        }).join('\n\n');
+
+        const content = message.content ? `${message.content}\n\n${fileContent}` : fileContent;
+        apiMessage.content = content;
       }
     }
     

@@ -62,7 +62,20 @@ export async function POST(req: NextRequest) {
     const openaiMessages = messages.map((msg: {
       role: 'user' | 'assistant' | 'system';
       content: string;
-      attachments?: Array<{ type: string; name: string; url: string; size: number; mimeType: string }>;
+      attachments?: Array<{
+        type: string;
+        name: string;
+        url: string;
+        size: number;
+        mimeType: string;
+        extractedText?: string;
+        extractionMetadata?: {
+          pages?: number;
+          title?: string;
+          author?: string;
+          extractedAt?: Date;
+        };
+      }>;
     }) => {
       // Handle messages with image attachments using vision format
       if (msg.attachments && msg.attachments.length > 0) {
@@ -89,14 +102,20 @@ export async function POST(req: NextRequest) {
             });
           });
 
-          // Add file descriptions as text if any
+          // Add file content as text if any
           if (fileAttachments.length > 0) {
-            const fileDescriptions = fileAttachments.map(file =>
-              `[File: ${file.name}]`
-            ).join(' ');
+            const fileContent = fileAttachments.map(file => {
+              // If the file has extracted text (e.g., PDF), include it
+              if (file.extractedText) {
+                return `[File: ${file.name}]\n\nContent:\n${file.extractedText}`;
+              }
+              // Otherwise, just show the filename
+              return `[File: ${file.name}]`;
+            }).join('\n\n');
+
             contentArray.push({
               type: 'text',
-              text: fileDescriptions
+              text: fileContent
             });
           }
 
@@ -105,11 +124,17 @@ export async function POST(req: NextRequest) {
             content: contentArray
           };
         } else {
-          // Only non-image files, handle as text descriptions
-          const fileDescriptions = fileAttachments.map(file =>
-            `[File: ${file.name}]`
-          ).join(' ');
-          const content = msg.content ? `${msg.content} ${fileDescriptions}` : fileDescriptions;
+          // Only non-image files, handle with extracted content if available
+          const fileContent = fileAttachments.map(file => {
+            // If the file has extracted text (e.g., PDF), include it
+            if (file.extractedText) {
+              return `[File: ${file.name}]\n\nContent:\n${file.extractedText}`;
+            }
+            // Otherwise, just show the filename
+            return `[File: ${file.name}]`;
+          }).join('\n\n');
+
+          const content = msg.content ? `${msg.content}\n\n${fileContent}` : fileContent;
 
           return {
             role: msg.role,

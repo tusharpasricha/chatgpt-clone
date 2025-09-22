@@ -21,6 +21,13 @@ export interface Attachment {
   size: number;
   mimeType: string;
   uploadcareUuid?: string; // Optional for backward compatibility
+  extractedText?: string; // For PDF and other document text content
+  extractionMetadata?: {
+    pages?: number;
+    title?: string;
+    author?: string;
+    extractedAt?: Date;
+  };
 }
 
 export interface Chat {

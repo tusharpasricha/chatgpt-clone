@@ -68,13 +68,29 @@ export function UploadcareFileUpload({
       const uploadResult = await uploadResponse.json();
 
       // Convert upload result to Attachment format
-      const attachments: Attachment[] = uploadResult.attachments.map((att: { id: string; name: string; type: string; url: string; size: number; mimeType: string }) => ({
+      const attachments: Attachment[] = uploadResult.attachments.map((att: {
+        id: string;
+        name: string;
+        type: string;
+        url: string;
+        size: number;
+        mimeType: string;
+        extractedText?: string;
+        extractionMetadata?: {
+          pages?: number;
+          title?: string;
+          author?: string;
+          extractedAt?: Date;
+        };
+      }) => ({
         id: att.id,
         name: att.name,
         type: att.type,
         url: att.url,
         size: att.size,
         mimeType: att.mimeType,
+        ...(att.extractedText && { extractedText: att.extractedText }),
+        ...(att.extractionMetadata && { extractionMetadata: att.extractionMetadata }),
       }));
 
       // Remove uploading files and add completed attachments

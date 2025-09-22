@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import { UploadClient } from '@uploadcare/upload-client';
 import { UploadcareSimpleAuthSchema, storeFile, fileInfo } from '@uploadcare/rest-client';
 import { ALL_SUPPORTED_TYPES, isSupportedFileType } from '@/lib/upload/uploadcare';
+import { extractPDFText, isPDFFile, truncateText } from '@/lib/pdf/pdf-extractor';
 
 // Initialize Uploadcare clients
 const uploadcare = new UploadClient({
@@ -113,6 +114,7 @@ export async function POST(req: NextRequest) {
 
         console.log(`Upload successful for ${file.name}, UUID: ${uploadResult.uuid}`);
 
+        // Create base attachment object
         const attachment = {
           id: uploadResult.uuid,
           name: uploadResult.originalFilename || file.name,
@@ -122,6 +124,33 @@ export async function POST(req: NextRequest) {
           mimeType: uploadResult.mimeType || file.type,
           uploadcareUuid: uploadResult.uuid,
         };
+
+        // Extract text content for PDF files
+        if (isPDFFile(uploadResult.mimeType || file.type)) {
+          console.log(`Extracting text from PDF: ${file.name}`);
+          try {
+            const extractionResult = await extractPDFText(cdnUrl);
+            if (extractionResult.success && extractionResult.text) {
+              // Truncate text to prevent token limit issues
+              const truncatedText = truncateText(extractionResult.text, 8000);
+
+              (attachment as any).extractedText = truncatedText;
+              (attachment as any).extractionMetadata = {
+                pages: extractionResult.metadata?.pages,
+                title: extractionResult.metadata?.title,
+                author: extractionResult.metadata?.author,
+                extractedAt: new Date(),
+              };
+
+              console.log(`PDF text extraction successful. Text length: ${truncatedText.length}, Pages: ${extractionResult.metadata?.pages}`);
+            } else {
+              console.log(`PDF text extraction failed: ${extractionResult.error}`);
+            }
+          } catch (extractionError) {
+            console.error(`PDF text extraction error for ${file.name}:`, extractionError);
+            // Continue without text extraction - file upload should still succeed
+          }
+        }
 
         console.log(`Created attachment with URL: ${cdnUrl}`);
 
